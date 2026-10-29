@@ -31,10 +31,11 @@ def read_series(path: Path) -> pd.Series:
         raise FileNotFoundError(
             f"Processed file not found: {path}. Run scripts/preprocess_data.py first."
         )
-    frame = pd.read_csv(path, parse_dates=["timestamp"])
+    frame = pd.read_csv(path)
     missing = {"timestamp", TARGET}.difference(frame.columns)
     if missing:
         raise ValueError(f"{path.name} is missing required columns: {sorted(missing)}")
+    frame["timestamp"] = pd.to_datetime(frame["timestamp"], errors="coerce")
     frame[TARGET] = pd.to_numeric(frame[TARGET], errors="coerce")
     frame[TARGET] = frame[TARGET].replace([np.inf, -np.inf], np.nan)
     frame = frame.dropna(subset=["timestamp", TARGET])
@@ -144,7 +145,7 @@ def _decompose(
             f"{label} decomposition needs at least {2 * period} observations "
             f"for period={period}; got {len(series)}."
         )
-    result = seasonal_decompose(series, model="additive", period=period, extrapolate_trend="freq")
+    result = seasonal_decompose(series, model="additive", period=period, extrapolate_trend="period")
     components = pd.DataFrame({
         "timestamp": series.index,
         "observed": result.observed.to_numpy(),
