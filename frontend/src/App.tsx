@@ -14,7 +14,7 @@ import {
   Waves,
   Zap,
 } from "lucide-react";
-import { ApiError, getHealth, type HealthResponse } from "./api/client";
+import { ApiError, getHealth } from "./api/client";
 import OverviewPage from "./pages/OverviewPage";
 import DataExplorerPage from "./pages/DataExplorerPage";
 
@@ -33,7 +33,6 @@ export default function App() {
   const [activePage, setActivePage] = useState<PageName>("Overview");
   const [isDark, setIsDark] = useState(true);
   const [connectionState, setConnectionState] = useState<ConnectionState>("checking");
-  const [health, setHealth] = useState<HealthResponse | null>(null);
   const [apiError, setApiError] = useState("");
 
   useEffect(() => {
@@ -44,14 +43,12 @@ export default function App() {
     const controller = new AbortController();
     setConnectionState("checking");
     getHealth(controller.signal)
-      .then((result) => {
-        setHealth(result);
+      .then(() => {
         setApiError("");
         setConnectionState("connected");
       })
       .catch((error: unknown) => {
         if (error instanceof Error && error.name === "AbortError") return;
-        setHealth(null);
         setApiError(error instanceof ApiError || error instanceof Error ? error.message : "Unknown API error.");
         setConnectionState("error");
       });
