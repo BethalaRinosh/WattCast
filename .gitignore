@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Generated data and model artefacts (keep folder placeholders)
+backend/data/raw/*
+!backend/data/raw/.gitkeep
+backend/data/processed/*
+!backend/data/processed/.gitkeep
+backend/models/*
+!backend/models/.gitkeep
+reports/figures/*
+!reports/figures/.gitkeep
+reports/results/*
+!reports/results/.gitkeep
+
+# Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
