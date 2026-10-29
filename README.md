@@ -228,12 +228,14 @@ WattCast/
 │   │   ├── raw/
 │   │   └── processed/
 │   ├── reports/
-│   │   └── eda/                 # Generated EDA artefacts
+│   │   ├── eda/                 # Generated EDA artefacts
+│   │   └── time_series/         # Generated decomposition and diagnostics
 │   ├── models/
 │   ├── notebooks/
 │   ├── tests/
 │   │   ├── test_preprocessing.py
-│   │   └── test_eda.py
+│   │   ├── test_eda.py
+│   │   └── test_time_series_analysis.py
 │   └── requirements.txt
 ├── frontend/
 │   └── src/
@@ -246,7 +248,8 @@ WattCast/
 │   ├── download_data.py
 │   ├── eda.py
 │   ├── generate_synthetic_data.py
-│   └── preprocess_data.py
+│   ├── preprocess_data.py
+│   └── time_series_analysis.py
 ├── README.md
 ├── VIVA_PREP.md
 └── .gitignore
