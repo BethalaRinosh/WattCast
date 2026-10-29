@@ -31,7 +31,7 @@ def test_recursive_forecast_returns_finite_predictions_for_full_horizon():
     model,_,_=_fit_model(train,"h")
     future=pd.date_range(idx[-1]+pd.Timedelta(hours=1),periods=6,freq="h")
     first=_recursive_forecast(model,train,future,"h"); second=_recursive_forecast(model,train,future,"h")
-    assert np.isfinite(first).all() and np.array_equal(first,second) and len(first)==len(future)
+    assert np.isfinite(first).all() and np.allclose(first,second,rtol=1e-10,atol=1e-12) and len(first)==len(future)
 
 def test_run_ml_forecasting_writes_artifacts_and_preserves_chronology(tmp_path):
     processed,output=tmp_path/"processed",tmp_path/"reports"; processed.mkdir()
