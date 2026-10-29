@@ -47,6 +47,28 @@ def read_series(path: Path) -> pd.Series:
 
 
 
+def _interpolate_short_internal_gaps(series: pd.Series, max_gap: int = 3) -> pd.Series:
+    """Interpolate only complete internal missing runs no longer than max_gap."""
+    interpolated = series.interpolate(method="time")
+    missing = series.isna()
+    if not missing.any():
+        return series.copy()
+    run_ids = missing.ne(missing.shift(fill_value=False)).cumsum()
+    allowed = pd.Series(False, index=series.index)
+    for run_id in run_ids[missing].unique():
+        run = run_ids.eq(run_id) & missing
+        positions = np.flatnonzero(run.to_numpy())
+        if len(positions) == 0 or len(positions) > max_gap:
+            continue
+        first, last = int(positions[0]), int(positions[-1])
+        if first > 0 and last < len(series) - 1:
+            if not missing.iloc[first - 1] and not missing.iloc[last + 1]:
+                allowed.loc[run] = True
+    result = series.copy()
+    result.loc[allowed] = interpolated.loc[allowed]
+    return result
+
+
 def _longest_regular_segment(series: pd.Series, frequency: str) -> tuple[pd.Series, dict[str, Any]]:
     """Return the longest regular segment, filling only internal gaps up to 3 bins."""
     series = series.sort_index()
@@ -57,7 +79,7 @@ def _longest_regular_segment(series: pd.Series, frequency: str) -> tuple[pd.Seri
         name=series.index.name or "timestamp",
     )
     regular = series.reindex(full_index).astype(float)
-    regular = regular.interpolate(method="time", limit=3, limit_area="inside")
+    regular = _interpolate_short_internal_gaps(regular, max_gap=3)
     valid = regular.notna()
     if not valid.any():
         raise ValueError(f"No usable observations remain after regularizing frequency={frequency}.")
