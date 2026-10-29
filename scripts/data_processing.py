@@ -71,8 +71,13 @@ def load_dataset(path: Path, source_type: str | None = None) -> pd.DataFrame:
 
     result.index.name = "timestamp"
     result["active_power_kw"] = result["active_power_kw"].replace([np.inf, -np.inf], np.nan)
+    invalid_timestamps = int(result.index.isna().sum())
+    duplicate_timestamps = int(result.index.duplicated().sum())
     result = result.loc[~result.index.isna()].sort_index()
     result = result.loc[~result.index.duplicated(keep="first")]
+    # Preserve loader cleaning counts so inspection reports original defects.
+    result.attrs["invalid_timestamps_dropped"] = invalid_timestamps
+    result.attrs["duplicate_timestamps_dropped"] = duplicate_timestamps
     return result
 
 
@@ -101,7 +106,8 @@ def inspect_dataset(frame: pd.DataFrame, source_type: str) -> dict[str, Any]:
         "missing_values": {
             column: int(count) for column, count in frame.isna().sum().items()
         },
-        "duplicate_timestamps": int(frame.index.duplicated().sum()),
+        "invalid_timestamps_dropped": int(frame.attrs.get("invalid_timestamps_dropped", 0)),
+        "duplicate_timestamps": int(frame.attrs.get("duplicate_timestamps_dropped", frame.index.duplicated().sum())),
     }
 
 
@@ -122,13 +128,37 @@ def _outlier_summary(series: pd.Series) -> dict[str, float | int | None]:
     }
 
 
+def _interpolate_short_internal_gaps(series: pd.Series, max_gap: int = 3) -> pd.Series:
+    """Interpolate only complete internal missing runs no longer than max_gap."""
+    interpolated = series.interpolate(method="time")
+    missing = series.isna()
+    if not missing.any():
+        return series.copy()
+
+    run_ids = missing.ne(missing.shift(fill_value=False)).cumsum()
+    allowed = pd.Series(False, index=series.index)
+    for run_id in run_ids[missing].unique():
+        run = run_ids.eq(run_id) & missing
+        positions = np.flatnonzero(run.to_numpy())
+        if len(positions) == 0 or len(positions) > max_gap:
+            continue
+        first, last = int(positions[0]), int(positions[-1])
+        if first > 0 and last < len(series) - 1:
+            if not missing.iloc[first - 1] and not missing.iloc[last + 1]:
+                allowed.loc[run] = True
+
+    result = series.copy()
+    result.loc[allowed] = interpolated.loc[allowed]
+    return result
+
+
 def _resample_power(frame: pd.DataFrame, rule: str) -> pd.DataFrame:
-    """Resample mean power, interpolate short gaps, and drop long missing gaps."""
+    """Resample mean power, fill only short internal gaps, and drop other gaps."""
     resampled = frame["active_power_kw"].resample(rule).mean().to_frame()
-    # Only bridge short gaps. Long gaps are dropped rather than fabricating a
-    # long run of measurements. Time interpolation respects timestamp spacing.
-    resampled["active_power_kw"] = resampled["active_power_kw"].interpolate(
-        method="time", limit=3, limit_area="inside"
+    # Only complete missing runs of <=3 bins are interpolated. A longer gap is
+    # left missing in full, rather than partially fabricating the first bins.
+    resampled["active_power_kw"] = _interpolate_short_internal_gaps(
+        resampled["active_power_kw"], max_gap=3
     )
     resampled = resampled.dropna()
     resampled.index.name = "timestamp"
