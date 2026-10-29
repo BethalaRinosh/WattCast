@@ -140,10 +140,6 @@ def run_model_evaluation(
     all_specs: dict[str, list[tuple[str, Path, str]]] = {}
     for series in ("hourly", "daily"):
         all_specs[series] = [
-            (name, (baseline_dir if "baseline" in str(path) else path.parent), column)
-            for name, path, column in _forecast_specs(series)
-        ]
-        all_specs[series] = [
             (name, baseline_dir / path.name if "baseline_forecasts" in path.name else
              statistical_dir / path.name if "statistical_forecasts" in path.name else
              ml_dir / path.name, column)
