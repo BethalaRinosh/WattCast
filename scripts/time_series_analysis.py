@@ -43,8 +43,6 @@ def read_series(path: Path) -> pd.Series:
     if frame.empty:
         raise ValueError(f"No valid observations found in {path}.")
     series = frame.set_index("timestamp")[TARGET].astype(float).sort_index()
-    if len(series) < 3:
-        raise ValueError(f"At least 3 valid observations are required in {path}.")
     return series
 
 
