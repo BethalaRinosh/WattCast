@@ -133,11 +133,12 @@ The script is implemented in `scripts/time_series_analysis.py`. It creates `back
 - `daily_acf_pacf.png`: autocorrelation and partial-autocorrelation diagnostic plots.
 
 ### Method and interpretation
-- **Seasonal decomposition:** Additive decomposition is run on hourly data with period 24 (daily cycle) and daily data with period 7 (weekly cycle). It separates observed values into estimated trend, seasonal pattern and residual. It is a descriptive tool, not a forecasting model.
+- **Regular intervals first:** Decomposition and autocorrelation assume equally spaced timestamps. The script reindexes each series to an hourly/daily grid, interpolates only up to three consecutive internal missing bins, and selects the longest remaining contiguous segment. Longer gaps are not bridged; the selected segment and interpolation counts are recorded in the JSON report.
+- **Seasonal decomposition:** Additive decomposition is run on the regular hourly segment with period 24 (daily cycle) and the regular daily segment with period 7 (weekly cycle). It separates observed values into estimated trend, seasonal pattern and residual. It is a descriptive tool, not a forecasting model.
 - **ADF test:** The null hypothesis is that the series has a unit root. A small p-value (commonly below 0.05) is evidence against that null.
 - **KPSS test:** The null hypothesis is level stationarity. A small p-value is evidence against stationarity. ADF and KPSS have opposite null hypotheses, so interpret both rather than relying on one result.
 - **Differencing:** The tests run on the daily level series and its first difference. Differencing can remove some trend, but it should be justified by diagnostics and model behavior.
-- **ACF/PACF:** The daily series is analysed up to 60 lags where the sample size permits. ACF shows correlation with lagged values; PACF estimates the direct association at each lag after accounting for shorter lags. Spikes can inform candidate AR/MA orders but do not prove forecast performance.
+- **ACF/PACF:** The longest regular daily segment is analysed up to 60 lags where the sample size permits. ACF shows correlation with lagged values; PACF estimates the direct association at each lag after accounting for shorter lags. Spikes can inform candidate AR/MA orders but do not prove forecast performance.
 - **Source provenance:** Reports and plot titles distinguish real UCI data, synthetic simulated data and unknown source type. Synthetic results must never be presented as measured household behavior.
 
 Run Step 5 tests:
