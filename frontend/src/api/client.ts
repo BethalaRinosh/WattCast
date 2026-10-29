@@ -8,6 +8,60 @@ export interface HealthResponse {
   version: string;
 }
 
+export interface SeriesPoint {
+  timestamp: string;
+  active_power_kw: number;
+}
+
+export interface SeriesResponse {
+  series: "hourly" | "daily";
+  count: number;
+  points: SeriesPoint[];
+}
+
+export interface DescriptiveStats {
+  count: number;
+  mean_kw: number;
+  std_kw: number | null;
+  min_kw: number;
+  q25_kw: number;
+  median_kw: number;
+  q75_kw: number;
+  max_kw: number;
+  start: string;
+  end: string;
+}
+
+export interface ModelMetrics {
+  mae?: number;
+  rmse?: number;
+  mape?: number;
+}
+
+export interface EvaluatedModel {
+  status?: string;
+  metrics?: ModelMetrics;
+  evaluated_timestamps?: number;
+}
+
+export interface SeriesEvaluation {
+  best_by_mae?: string;
+  best_by_rmse?: string;
+  evaluation_observations?: number;
+  models?: Record<string, EvaluatedModel>;
+}
+
+export interface SummaryResponse {
+  source_type: "real" | "synthetic" | "unknown" | null;
+  source_label: string | null;
+  hourly: DescriptiveStats | null;
+  daily: DescriptiveStats | null;
+  evaluation: {
+    series?: Record<string, SeriesEvaluation>;
+    [key: string]: unknown;
+  } | null;
+}
+
 export class ApiError extends Error {
   status: number;
   detail: unknown;
@@ -60,4 +114,17 @@ export async function apiGet<T>(path: string, signal?: AbortSignal): Promise<T> 
 
 export function getHealth(signal?: AbortSignal): Promise<HealthResponse> {
   return apiGet<HealthResponse>("/api/health", signal);
+}
+
+export function getSummary(signal?: AbortSignal): Promise<SummaryResponse> {
+  return apiGet<SummaryResponse>("/api/summary", signal);
+}
+
+export function getSeries(
+  series: "hourly" | "daily",
+  limit = 500,
+  signal?: AbortSignal,
+): Promise<SeriesResponse> {
+  const safeLimit = Math.min(2000, Math.max(1, Math.floor(limit)));
+  return apiGet<SeriesResponse>(`/api/series/${series}?limit=${safeLimit}`, signal);
 }
