@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 
 from scripts.time_series_analysis import (
+    _interpolate_short_internal_gaps,
     _stationarity_result,
     read_series,
     run_time_series_analysis,
@@ -84,3 +85,14 @@ def test_run_analysis_writes_json_csv_and_plots(tmp_path):
         "daily_decomposition.png",
     ):
         assert (output / filename).stat().st_size > 0
+
+
+
+def test_diagnostics_do_not_partially_fill_long_gaps():
+    index = pd.date_range("2024-01-01", periods=7, freq="D")
+    series = pd.Series(
+        [1.0, float("nan"), float("nan"), float("nan"), float("nan"), 2.0, 2.0],
+        index=index,
+    )
+    cleaned = _interpolate_short_internal_gaps(series, max_gap=3)
+    assert cleaned.iloc[1:5].isna().all()
