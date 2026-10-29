@@ -4,7 +4,7 @@
 
 WattCast is an academic micro project for the Data Science 3rd Internal Assessment. It analyses historical electricity consumption and compares time-series and machine-learning forecasting methods through a web dashboard.
 
-> **Project status:** Step 2 of 16. The repository scaffold and data-acquisition scripts are in place. Dataset generation/download has not yet been executed in this environment, and no forecasting metrics have been generated.
+> **Project status:** Step 3 of 16. Dataset download/generation scripts and the preprocessing pipeline are committed. The pipeline has unit tests in the repository, but execution against the full dataset has not yet been verified in this environment. No forecasting metrics have been generated.
 
 ## Problem statement
 Electricity consumption changes over time due to recurring daily and weekly routines, longer-term trends, and random variation. WattCast aims to explore these patterns and compare forecasting approaches using a chronological test set.
@@ -23,12 +23,11 @@ The UCI dataset contains 2,075,259 one-minute measurements from one household ne
 
 **Citation:** Hebrail, G. & Berard, A. (2006). *Individual Household Electric Power Consumption* [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C58K54.
 
-### Step 2: Download and synthetic fallback
-Two scripts have been added:
-- `scripts/download_data.py`: downloads the official UCI ZIP, extracts only `household_power_consumption.txt`, and writes `backend/data/raw/dataset_metadata.json` with provenance.
-- `scripts/generate_synthetic_data.py`: creates reproducible hourly simulated readings with trend, daily, weekly and yearly patterns plus random noise.
+## Step 2: Download and synthetic fallback
+- `scripts/download_data.py` downloads the official UCI ZIP, extracts `household_power_consumption.txt`, and writes provenance metadata.
+- `scripts/generate_synthetic_data.py` creates reproducible hourly simulated readings with trend, daily, weekly and yearly patterns plus random noise.
 
-Install the Python dependencies first:
+Install dependencies:
 ```bash
 python -m venv .venv
 # Windows PowerShell:
@@ -38,26 +37,54 @@ source .venv/bin/activate
 pip install -r backend/requirements.txt
 ```
 
-Run the default workflow from the repository root:
+Download the real dataset, with explicit synthetic fallback if download fails:
 ```bash
 python scripts/download_data.py
 ```
 
-Behaviour:
-1. If the real dataset already exists, the downloader reuses it unless `--force` is provided.
-2. Otherwise, it attempts to download the official UCI archive.
-3. If the download fails, it logs an explicit **FALLBACK ACTIVE: SYNTHETIC** warning, writes `synthetic_hourly_energy.csv`, and records `"source_type": "synthetic"` in the metadata JSON.
-4. To require real data and refuse fallback, run `python scripts/download_data.py --no-synthetic-fallback`.
-5. To choose a fallback seed and length, use `python scripts/download_data.py --synthetic-years 4 --seed 42`.
-
-Generate synthetic data directly (without attempting a download):
+Generate synthetic data directly:
 ```bash
 python scripts/generate_synthetic_data.py --years 4 --seed 42
 ```
 
-The synthetic file contains hourly timestamps, a simulated active-power target in kW, additional simulated electrical readings, and a `data_source=synthetic` label. It is not observed household data. The fixed random seed makes the generated values reproducible. The synthetic generator is intended as a fallback for development and demonstrations, not as evidence of real-world model performance.
+To require real data and refuse fallback, use `python scripts/download_data.py --no-synthetic-fallback`. Synthetic output contains `data_source=synthetic` and metadata with `"source_type": "synthetic"`. Synthetic values are simulated, not observed household measurements.
 
-The real UCI file and synthetic fallback have different schemas by design: the UCI file preserves its original columns and one-minute cadence; the later preprocessing step will normalise the real and synthetic sources into a common time-series representation.
+## Step 3: Data loading, cleaning and resampling
+Implemented in:
+- `scripts/data_processing.py`: reusable functions to discover, load, inspect, clean and resample either source.
+- `scripts/preprocess_data.py`: command-line entry point that saves hourly/daily series and a JSON report.
+- `backend/tests/test_preprocessing.py`: focused tests for the real UCI text schema, synthetic CSV schema, missing values, inspection and resampling.
+
+Run preprocessing from the repository root after downloading or generating data:
+```bash
+python scripts/preprocess_data.py
+```
+
+Optional explicit paths:
+```bash
+python scripts/preprocess_data.py --input backend/data/raw/synthetic_hourly_energy.csv --source-type synthetic
+```
+
+Outputs are written under `backend/data/processed/`:
+- `hourly_energy.csv`: hourly mean active power in kW.
+- `daily_energy.csv`: daily mean active power in kW.
+- `preprocessing_report.json`: source type, input dimensions/types/date range/frequency/missing counts, output row counts, IQR outlier summary and cleaning policy.
+
+### Cleaning decisions
+1. **UCI parsing:** Read the semicolon-delimited text and treat `?` and empty measurement fields as missing. Combine `Date` and `Time` into a datetime index.
+2. **Common schema:** Both sources become a single `active_power_kw` series indexed by timestamp.
+3. **Datetime integrity:** Invalid timestamps are dropped, records are sorted chronologically, and duplicate timestamps are reduced to the first observation.
+4. **Numeric integrity:** Non-numeric and infinite power values become missing.
+5. **Resampling:** Use the mean power in each hour and day. The target is average active power in kW; for a one-hour interval, mean kW is numerically equivalent to approximate kWh consumed during that hour.
+6. **Missing values:** Time interpolation bridges at most three consecutive missing resampled bins and only fills internal gaps. Longer gaps are dropped rather than inventing long runs of data.
+7. **Outliers:** Report values outside the 1.5×IQR bounds. Do not automatically remove them, because a genuine high-demand period may be an important peak. The IQR rule is a screening tool, not proof of a data error.
+
+Run the preprocessing tests:
+```bash
+python -m pytest backend/tests/test_preprocessing.py -q
+```
+
+**Verification note:** Source files and README are committed on GitHub. Full local execution is not claimed because repository cloning/runtime execution was unavailable in the previous environment. Run the commands above locally to verify the dataset download, preprocessing outputs and tests. The full UCI source has over two million minute-level rows, so processing can take a little time and memory.
 
 ## Methodology
 1. Problem definition and scope.
@@ -90,7 +117,7 @@ All numerical results and plots will be generated by code from the selected data
 | Baselines and candidate models | — | — | — | Not trained |
 
 ## Installation and running
-**Current status:** Data-acquisition scripts are implemented. The application startup command, backend API and frontend will be added in later steps.
+**Current status:** Dataset acquisition and preprocessing scripts are implemented. The application startup command, backend API and frontend will be added in later steps.
 
 Planned local setup:
 - Python 3.10 or newer
@@ -128,6 +155,7 @@ WattCast/
 │   ├── models/
 │   ├── notebooks/
 │   ├── tests/
+│   │   └── test_preprocessing.py
 │   └── requirements.txt
 ├── frontend/
 │   └── src/
@@ -136,8 +164,10 @@ WattCast/
 │       ├── hooks/
 │       └── pages/
 ├── scripts/
+│   ├── data_processing.py
 │   ├── download_data.py
-│   └── generate_synthetic_data.py
+│   ├── generate_synthetic_data.py
+│   └── preprocess_data.py
 ├── reports/
 ├── README.md
 ├── VIVA_PREP.md
@@ -151,8 +181,10 @@ No application screenshots yet. They will be added after the UI is implemented a
 - Forecast quality depends on data quality and the selected test period.
 - The real dataset represents one household and is not a universal representation of every building or grid.
 - Synthetic fallback values are simulated and must be labelled as such in charts, reports and results.
+- Short-gap interpolation can smooth peaks; long gaps are dropped to avoid fabricating long sequences.
+- IQR outlier flags can include legitimate demand peaks.
 - Forecast intervals are estimates, not guarantees.
-- MAPE can be unstable when actual values are zero or close to zero; this will be documented during evaluation.
+- MAPE can be unstable when actual values are zero or close to zero.
 - Future extensions could include weather features, more robust interval calibration and additional datasets.
 
 ## Author
@@ -161,12 +193,16 @@ Academic project, B.Tech CSE (AI & ML).
 
 ## Progress log
 - **Step 1/16 — Repository setup and scaffold:** Created the initial repository structure and documentation skeleton.
-- **Step 2/16 — Dataset acquisition:** Added the official UCI downloader, safe extraction of the expected text file, a reproducible synthetic hourly generator, and JSON provenance metadata. Updated these instructions and documented the fallback behaviour. Remote files were verified after commit; local execution could not be performed because this environment could not resolve GitHub for cloning, so runtime behaviour remains to be tested in the next available environment.
-- **Next:** Step 3, implement data loading, inspection, cleaning and resampling. Do not treat Step 3 as started until approved.
+- **Step 2/16 — Dataset acquisition:** Added the official UCI downloader, safe extraction of the expected text file, a reproducible synthetic hourly generator, and JSON provenance metadata.
+- **Step 3/16 — Loading, inspection, cleaning and resampling:** Added a shared loader for the UCI semicolon-delimited source and synthetic CSV, inspection summary, IQR outlier reporting, limited time interpolation, hourly/daily resampling, saved output/report paths and preprocessing tests. Code is committed; runtime test results remain unverified in this environment.
+- **Next:** Step 4, exploratory data analysis. Do not treat Step 4 as started until approved.
 
 ## Viva checkpoint
-**Q: Why do we need a synthetic fallback, and how do we avoid misleading users?**  
-A: It lets the application be developed or demonstrated when the public dataset cannot be downloaded. We mark the source in both the file and a metadata JSON, print a clear warning, and never describe synthetic values as real observations. Model metrics on synthetic data must be labelled accordingly.
+**Q: Why do we resample the original minute-level data to hourly and daily data?**  
+A: The original dataset contains over two million minute-level rows. Hourly and daily summaries reduce processing cost and make broad patterns easier to interpret. We use mean active power in kW as the forecasting target. For an hourly interval, the average power in kW is numerically equivalent to approximate energy in kWh over that hour.
+
+**Q: Why are outliers reported but not automatically deleted?**  
+A: A high reading might be a real demand peak rather than a measurement error. The IQR rule flags suspicious values for inspection, but deleting them automatically could remove the very peaks the forecasting model should learn.
 
 **Q: Why is a chronological test split important?**  
 A: Time-series forecasting predicts future values from past observations. A random split can leak future patterns into training data and make evaluation unrealistically optimistic. The model should be tested on observations that occur after the training period.
