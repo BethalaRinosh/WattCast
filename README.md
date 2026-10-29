@@ -4,7 +4,7 @@
 
 WattCast is an academic micro project for the Data Science 3rd Internal Assessment. It analyses historical electricity consumption and compares time-series and machine-learning forecasting methods through a web dashboard.
 
-> **Project status:** Step 5 of 16. Dataset acquisition, preprocessing, EDA, decomposition, stationarity testing and ACF/PACF diagnostics are implemented. Steps 3 and 4 were run locally against the real UCI dataset; the user reported 9 backend tests passing after Step 4. Step 5 runtime verification is pending. No forecasting metrics have been generated.
+> **Project status:** Step 5 of 16. Dataset acquisition, preprocessing, EDA, decomposition, stationarity testing and ACF/PACF diagnostics are implemented. Steps 3 and 4 were run locally against the real UCI dataset; the user reported 9 backend tests passing after Step 4. Step 5 ran locally against the real UCI dataset and produced diagnostics; the first test run exposed an invalid-timestamp parsing bug, which has been fixed along with a deprecated statsmodels option. Rerun the tests against the latest commit to confirm the fix. No forecasting metrics have been generated.
 
 ## Problem statement
 Electricity consumption changes over time due to recurring daily and weekly routines, longer-term trends, and random variation. WattCast aims to explore these patterns and compare forecasting approaches using a chronological test set.
