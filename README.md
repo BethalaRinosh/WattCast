@@ -4,7 +4,7 @@
 
 WattCast is an academic micro project for the Data Science 3rd Internal Assessment. It analyses historical electricity consumption and compares time-series and machine-learning forecasting methods through a web dashboard.
 
-> **Project status:** Step 4 of 16. Dataset acquisition, preprocessing and exploratory data analysis (EDA) are implemented. Unit tests are committed, but runtime execution against the full dataset has not yet been verified in this environment. No forecasting metrics have been generated.
+> **Project status:** Step 5 of 16. Dataset acquisition, preprocessing, EDA, decomposition, stationarity testing and ACF/PACF diagnostics are implemented. Steps 3 and 4 were run locally against the real UCI dataset; the user reported 9 backend tests passing after Step 4. Step 5 runtime verification is pending. No forecasting metrics have been generated.
 
 ## Problem statement
 Electricity consumption changes over time due to recurring daily and weekly routines, longer-term trends, and random variation. WattCast aims to explore these patterns and compare forecasting approaches using a chronological test set.
@@ -84,7 +84,7 @@ Run the preprocessing tests:
 python -m pytest backend/tests/test_preprocessing.py -q
 ```
 
-**Verification note:** Source files and README are committed on GitHub. Full local execution is not claimed because repository cloning/runtime execution was unavailable in the previous environment. Run the commands above locally to verify the dataset download, preprocessing outputs and tests. The full UCI source has over two million minute-level rows, so processing can take a little time and memory.
+**Verification note:** The user ran the real UCI download and preprocessing locally. Their console reported 2,075,259 input rows, 25,979 missing active-power values, 0 duplicate timestamps, 34,190 hourly rows and 1,441 daily rows. These results came from the user's terminal output; rerun the commands if regenerating the data. The full UCI source has over two million minute-level rows, so processing can take a little time and memory.
 
 
 ## Step 4: Exploratory data analysis (EDA)
@@ -106,19 +106,64 @@ The EDA pipeline reads the processed CSVs, validates their schema, sorts timesta
 - `intraday_profile.png`: average profile across the 24 hours of a day.
 - `weekday_profile.png`: average profile across weekdays.
 
-All chart titles identify the source as **REAL UCI DATA** or **SYNTHETIC SIMULATED DATA** when the preprocessing report is available. Synthetic plots describe only simulated values and must not be presented as measured household behavior. The summaries are descriptive, not causal. EDA does not train models or report forecast accuracy.
+All chart titles identify the source as **REAL UCI DATA** or **SYNTHETIC SIMULATED DATA** when the preprocessing report is available. Synthetic plots describe only simulated values and must not be presented as measured household behavior. The summaries are descriptive, not causal. EDA does not train models or report forecast accuracy. The user ran EDA locally on the real source: the script reported a 1.092 kW hourly mean and peak average hour 20 (8 PM). The user also reported 4 EDA tests and all 9 then-existing backend tests passing.
 
 Run EDA tests:
 ```bash
 python -m pytest backend/tests/test_eda.py -q
 ```
 
+
+## Step 5: Decomposition, stationarity and ACF/PACF
+Run after preprocessing:
+```bash
+python scripts/time_series_analysis.py
+```
+
+Optional custom paths:
+```bash
+python scripts/time_series_analysis.py --processed-dir backend/data/processed --output-dir backend/reports/time_series
+```
+
+The script is implemented in `scripts/time_series_analysis.py`. It creates `backend/reports/time_series/` containing:
+- `time_series_analysis.json`: source label, decomposition metadata, ADF/KPSS results for daily levels and first differences, and ACF/PACF settings.
+- `hourly_decomposition.csv` and `daily_decomposition.csv`: observed, trend, seasonal and residual components.
+- `hourly_decomposition.png` and `daily_decomposition.png`: four-panel additive decomposition charts.
+- `daily_acf_pacf.csv`: numerical ACF/PACF values through the selected lag.
+- `daily_acf_pacf.png`: autocorrelation and partial-autocorrelation diagnostic plots.
+
+### Method and interpretation
+- **Seasonal decomposition:** Additive decomposition is run on hourly data with period 24 (daily cycle) and daily data with period 7 (weekly cycle). It separates observed values into estimated trend, seasonal pattern and residual. It is a descriptive tool, not a forecasting model.
+- **ADF test:** The null hypothesis is that the series has a unit root. A small p-value (commonly below 0.05) is evidence against that null.
+- **KPSS test:** The null hypothesis is level stationarity. A small p-value is evidence against stationarity. ADF and KPSS have opposite null hypotheses, so interpret both rather than relying on one result.
+- **Differencing:** The tests run on the daily level series and its first difference. Differencing can remove some trend, but it should be justified by diagnostics and model behavior.
+- **ACF/PACF:** The daily series is analysed up to 60 lags where the sample size permits. ACF shows correlation with lagged values; PACF estimates the direct association at each lag after accounting for shorter lags. Spikes can inform candidate AR/MA orders but do not prove forecast performance.
+- **Source provenance:** Reports and plot titles distinguish real UCI data, synthetic simulated data and unknown source type. Synthetic results must never be presented as measured household behavior.
+
+Run Step 5 tests:
+```bash
+python -m pytest backend/tests/test_time_series_analysis.py -q
+python -m pytest backend/tests -q
+```
+
+**Step 5 viva checkpoint**
+
+**Q: What does stationarity mean in time-series analysis?**  
+A: A weakly stationary series has a stable mean and variance over time, and its covariance depends on lag rather than absolute time. Many classical time-series methods work best when the series is stationary or made stationary through an appropriate transformation.
+
+**Q: Why do we run both ADF and KPSS?**  
+A: Their null hypotheses are opposite. ADF tests for a unit root, while KPSS tests for level stationarity. Considering both gives a more informative diagnostic than treating one p-value as a definitive answer.
+
+**Q: What is the difference between ACF and PACF?**  
+A: ACF measures correlation between observations separated by a lag. PACF estimates the association at a lag after accounting for shorter lags. Both can help suggest candidate model orders, but final model selection requires chronological holdout evaluation.
+
+
 ## Methodology
 1. Repository scaffold and project documentation.
 2. Dataset download and reproducible synthetic fallback.
 3. Data loading, inspection, cleaning and hourly/daily resampling.
 4. Exploratory data analysis (EDA) and chart artefacts.
-5. Decomposition, stationarity tests and ACF/PACF analysis.
+5. Additive hourly/daily decomposition, ADF/KPSS stationarity diagnostics, first-difference checks and daily ACF/PACF.
 6. Chronological train/test split and baseline forecasts.
 7. Holt-Winters, ARIMA and SARIMA candidates.
 8. Lag/calendar-feature machine-learning model.
@@ -227,9 +272,10 @@ Academic project, B.Tech CSE (AI & ML).
 ## Progress log
 - **Step 1/16 — Repository setup and scaffold:** Created the initial repository structure and documentation skeleton.
 - **Step 2/16 — Dataset acquisition:** Added the official UCI downloader, safe extraction of the expected text file, a reproducible synthetic hourly generator, and JSON provenance metadata.
-- **Step 3/16 — Loading, inspection, cleaning and resampling:** Added a shared loader for the UCI semicolon-delimited source and synthetic CSV, inspection summary, IQR outlier reporting, limited time interpolation, hourly/daily resampling, saved output/report paths and preprocessing tests. Code is committed; runtime test results remain unverified in this environment.
-- **Step 4/16 — Exploratory data analysis:** Added `scripts/eda.py` to compute descriptive statistics and intraday, weekday and monthly profiles, write JSON/CSV summaries and produce four labelled charts. Added EDA tests and the Matplotlib dependency. Runtime execution remains unverified in this environment.
-- **Next:** Step 5, decomposition, stationarity tests and ACF/PACF. Do not begin until approved.
+- **Step 3/16 — Loading, inspection, cleaning and resampling:** Added a shared loader for the UCI semicolon-delimited source and synthetic CSV, inspection summary, IQR outlier reporting, limited time interpolation, hourly/daily resampling, saved output/report paths and preprocessing tests. The user verified the real-data preprocessing locally.
+- **Step 4/16 — Exploratory data analysis:** Added `scripts/eda.py` to compute descriptive statistics and intraday, weekday and monthly profiles, write JSON/CSV summaries and produce four labelled charts. The user verified the script on real data; 4 EDA tests and all 9 then-existing backend tests passed.
+- **Step 5/16 — Time-series diagnostics:** Added additive hourly/daily decomposition, ADF and KPSS tests on daily levels and first differences, daily ACF/PACF tables and plots, source-labelled JSON outputs, and focused tests. Runtime verification is pending.
+- **Next:** Step 6, chronological train/test split and baseline forecasts. Do not begin until approved.
 
 ## Viva checkpoint
 **Q: Why do we resample the original minute-level data to hourly and daily data?**  
