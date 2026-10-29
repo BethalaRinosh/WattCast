@@ -146,8 +146,7 @@ def run_eda(
         "weekday_profile_plot": "weekday_profile.png",
     }
     (output_dir / "eda_summary.json").write_text(
-        json.dumps(summary, indent=2, allow_nan=False) + "
-", encoding="utf-8"
+        json.dumps(summary, indent=2, allow_nan=False) + "\n", encoding="utf-8"
     )
 
     hourly.groupby(hourly.index.hour).mean().rename("mean_active_power_kw").rename_axis("hour").to_csv(
