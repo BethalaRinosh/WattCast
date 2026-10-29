@@ -4,7 +4,7 @@
 
 WattCast is an academic micro project for the Data Science 3rd Internal Assessment. It analyses historical electricity consumption and compares time-series and machine-learning forecasting methods through a web dashboard.
 
-> **Project status:** Steps 1–7 are verified locally on real UCI data. Step 8's Random Forest pipeline completed on real UCI data and its scores are recorded below. The first test run had 49 passing tests and one overly strict floating-point equality assertion; that assertion has been changed to a tight numerical-tolerance comparison. Rerun the focused and full test suites before marking Step 8 fully verified.
+> **Project status:** Steps 1–9 are verified locally on real UCI data. Step 9 was confirmed with 7 focused evaluation tests and 57 passing backend tests; evaluation covered 3,718 hourly and 269 daily holdout observations. Step 10 API implementation and contract tests have been committed, but local test results are pending. Do not describe Step 10 as verified until the new tests pass locally.
 
 ## Problem statement
 Electricity consumption changes over time due to recurring daily and weekly routines, longer-term trends, and random variation. WattCast aims to explore these patterns and compare forecasting approaches using a chronological test set.
@@ -375,6 +375,59 @@ A: Neighboring residuals may still be related. That can indicate the model has n
 
 **Q: How does the cache know when to refresh?**  
 A: WattCast hashes the forecast CSV contents along with the test-size setting and cache version. A changed input produces a different fingerprint and forces recalculation.
+
+## Step 10: FastAPI backend and API contracts
+
+The read-only API is implemented in `backend/app/main.py`. It serves saved artifacts produced by Steps 3–9; it does not rerun expensive model fitting for each browser request.
+
+Start it from the repository root after running the relevant pipeline scripts:
+```powershell
+python -m uvicorn backend.app.main:app --reload
+```
+
+Open the interactive API documentation at `http://127.0.0.1:8000/docs`.
+
+### Endpoints
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/health` | Confirms the API process is running. It does not guarantee report files exist. |
+| `GET /api/summary` | Returns EDA descriptive statistics and evaluation rankings. |
+| `GET /api/series/hourly` or `/api/series/daily` | Returns the most recent cleaned observations; `limit` is between 1 and 2,000. |
+| `GET /api/eda` | Returns the EDA summary and available intraday, weekday and monthly profile tables. |
+| `GET /api/decomposition/hourly` or `/api/decomposition/daily` | Returns saved observed, trend, seasonal and residual components. |
+| `GET /api/models/hourly` or `/api/models/daily` | Returns holdout model metrics and residual diagnostics. |
+| `GET /api/forecast/hourly?model=holt_winters` | Returns stored chronological holdout predictions for a supported model. |
+
+Supported model identifiers are `naive`, `seasonal_naive`, `holt_winters`, `arima_1_1_1`, `sarima`, and `random_forest_lag_calendar`. Forecast responses explicitly describe themselves as saved holdout predictions, not a newly generated future forecast.
+
+### Validation and errors
+
+- Pydantic response models define stable health, time-series and forecast response shapes.
+- Request limits and model identifiers are validated; invalid requests return HTTP 422.
+- Missing pipeline outputs return HTTP 404 with an actionable error code/message. Unreadable or malformed artifacts return a structured HTTP 500 error.
+- CORS permits the local Vite development origins and only enables GET requests.
+- Report/data paths default to `backend/data/processed` and `backend/reports`. Optional environment variables `WATTCAST_PROCESSED_DIR` and `WATTCAST_REPORTS_DIR` can override them.
+
+### Tests
+
+```powershell
+python -m pytest backend/tests/test_api.py -q
+python -m pytest backend/tests -q
+```
+
+The API contract tests cover health, sorted/limited series output, missing artifacts, summary composition, invalid models, saved holdout predictions and decomposition schema. Their local pass status must be recorded only after running them in the development environment.
+
+**Step 10 viva checkpoint**
+
+**Q: Why does the API read saved artifacts instead of training a model per request?**  
+A: Training and statistical fitting can be expensive. Precomputed artifacts keep requests fast and reproducible; a future forecasting service could generate new forecasts through a separate controlled workflow.
+
+**Q: What is the difference between HTTP 404 and HTTP 422 here?**  
+A: A 404 means the requested saved artifact or result does not exist. A 422 means the request contains an invalid parameter, such as an unsupported model identifier.
+
+**Q: Does `/api/health` mean the whole application is ready?**  
+A: No. It confirms the API process is responding. Data and report endpoints can still return 404 if earlier pipeline steps have not generated their artifacts.
 
 ## Methodology
 1. Repository scaffold and project documentation.
