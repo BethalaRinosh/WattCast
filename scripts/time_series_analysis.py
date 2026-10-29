@@ -36,7 +36,7 @@ def read_series(path: Path) -> pd.Series:
     if missing:
         raise ValueError(f"{path.name} is missing required columns: {sorted(missing)}")
     frame[TARGET] = pd.to_numeric(frame[TARGET], errors="coerce")
-    frame = frame.replace([np.inf, -np.inf], np.nan)
+    frame[TARGET] = frame[TARGET].replace([np.inf, -np.inf], np.nan)
     frame = frame.dropna(subset=["timestamp", TARGET])
     frame = frame.sort_values("timestamp").drop_duplicates("timestamp", keep="first")
     if frame.empty:
