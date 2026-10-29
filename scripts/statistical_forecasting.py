@@ -18,13 +18,24 @@ from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
-from scripts.baseline_forecasting import (
-    DEFAULT_PROCESSED_DIR,
-    chronological_split,
-    evaluate_forecast,
-    longest_regular_segment,
-    read_series,
-)
+try:
+    # Package import for tests and `python -m scripts.statistical_forecasting`.
+    from .baseline_forecasting import (
+        DEFAULT_PROCESSED_DIR,
+        chronological_split,
+        evaluate_forecast,
+        longest_regular_segment,
+        read_series,
+    )
+except ImportError:
+    # Direct-script import when launched as `python scripts/statistical_forecasting.py`.
+    from baseline_forecasting import (
+        DEFAULT_PROCESSED_DIR,
+        chronological_split,
+        evaluate_forecast,
+        longest_regular_segment,
+        read_series,
+    )
 
 LOGGER = logging.getLogger("wattcast.statistical_forecasting")
 ROOT = Path(__file__).resolve().parents[1]
