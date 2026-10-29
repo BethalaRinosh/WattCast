@@ -26,13 +26,13 @@ def test_candidate_forecasts_use_requested_horizon_and_are_finite():
 def test_candidate_fitting_records_failure_without_raising(monkeypatch):
     import scripts.statistical_forecasting as module
 
-    class BrokenModel:
-        def __call__(self):
+    class BrokenFit:
+        def fit(self, *args, **kwargs):
             raise RuntimeError("deliberate test failure")
 
     # Make only the first candidate fail while leaving the others untouched.
     original = module.ExponentialSmoothing
-    monkeypatch.setattr(module, "ExponentialSmoothing", lambda *args, **kwargs: BrokenModel())
+    monkeypatch.setattr(module, "ExponentialSmoothing", lambda *args, **kwargs: BrokenFit())
     index = pd.date_range("2024-01-01", periods=24 * 20, freq="h")
     train = pd.Series(1.0 + np.sin(np.arange(len(index)) * 2 * np.pi / 24), index=index)
     predictions, outcomes = _fit_candidates(train, horizon=4, season_length=24)
@@ -40,7 +40,6 @@ def test_candidate_fitting_records_failure_without_raising(monkeypatch):
     assert "deliberate test failure" in outcomes["holt_winters"]["error"]
     assert "arima_1_1_1" in predictions
     assert "sarima" in predictions
-    monkeypatch.setattr(module, "ExponentialSmoothing", original)
 
 
 def test_run_statistical_forecasting_writes_results_and_preserves_chronology(tmp_path):
