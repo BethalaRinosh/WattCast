@@ -208,13 +208,13 @@ def get_decomposition(series: SeriesName) -> dict[str, Any]:
     series = _valid_series(series)
     frame = _csv_artifact(
         REPORTS_DIR / "time_series" / f"{series}_decomposition.csv",
-        {"observed", "trend", "seasonal", "resid"},
+        {"observed", "trend", "seasonal", "residual"},
     )
     if "timestamp" not in frame.columns:
         frame = frame.reset_index()
         frame = frame.rename(columns={frame.columns[0]: "timestamp"})
     frame = frame.replace([float("inf"), float("-inf")], float("nan"))
-    frame = frame.where(pd.notna(frame), None)
+    frame = frame.astype(object).where(pd.notna(frame), None)
     return {"series": series, "count": len(frame), "points": frame.to_dict(orient="records")}
 
 
