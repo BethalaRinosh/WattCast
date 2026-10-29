@@ -17,7 +17,10 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-from generate_synthetic_data import generate_synthetic_dataset, write_metadata
+try:
+    from .generate_synthetic_data import generate_synthetic_dataset, write_metadata
+except ImportError:  # Support direct execution as `python scripts/download_data.py`.
+    from generate_synthetic_data import generate_synthetic_dataset, write_metadata
 
 LOGGER = logging.getLogger("wattcast.download")
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
