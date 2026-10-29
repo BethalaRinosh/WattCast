@@ -4,7 +4,7 @@
 
 WattCast is an academic micro project for the Data Science 3rd Internal Assessment. It analyses historical electricity consumption and compares time-series and machine-learning forecasting methods through a web dashboard.
 
-> **Project status:** Steps 1–9 are verified locally on real UCI data. Step 9 was confirmed with 7 focused evaluation tests and 57 passing backend tests; evaluation covered 3,718 hourly and 269 daily holdout observations. Step 10 API implementation and contract tests have been committed, but local test results are pending. Do not describe Step 10 as verified until the new tests pass locally.
+> **Project status:** Steps 1–10 are verified locally. Step 9 was confirmed on real UCI data with 7 focused evaluation tests and 57 passing backend tests. Step 10's API tests passed 8/8 and the complete backend suite passed 65/65; Uvicorn started successfully and `/api/health`, `/docs`, and `/openapi.json` returned HTTP 200. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
 
 ## Problem statement
 Electricity consumption changes over time due to recurring daily and weekly routines, longer-term trends, and random variation. WattCast aims to explore these patterns and compare forecasting approaches using a chronological test set.
@@ -416,7 +416,7 @@ python -m pytest backend/tests/test_api.py -q
 python -m pytest backend/tests -q
 ```
 
-The API contract tests cover health, sorted/limited series output, missing artifacts, summary composition, invalid models, saved holdout predictions and decomposition schema. Their local pass status must be recorded only after running them in the development environment.
+The API contract tests cover health, sorted/limited series output, missing artifacts, summary composition, invalid models, saved holdout predictions and decomposition schema. Local verification: 8 API tests passed; the complete backend suite passed 65 tests in 24.49 seconds. Uvicorn started successfully, and the health endpoint, Swagger docs and OpenAPI schema returned HTTP 200. Pytest reported one non-blocking `StarletteDeprecationWarning` about the current `httpx` integration with `starlette.testclient`; it did not cause test failures.
 
 **Step 10 viva checkpoint**
 
