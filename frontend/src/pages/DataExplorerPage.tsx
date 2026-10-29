@@ -63,7 +63,7 @@ export default function DataExplorerPage() {
 
   function exportCsv() {
     if (!points.length) return;
-    const escapeCsv = (value: string) => `"${value.replaceAll('"', '""')}"`;
+    const escapeCsv = (value: string) => `"${value.replace(/"/g, '""')}"`;
     const lines = [
       "timestamp,active_power_kw",
       ...points.map((point) => `${escapeCsv(point.timestamp)},${point.active_power_kw}`),
