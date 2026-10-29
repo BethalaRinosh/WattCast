@@ -35,7 +35,7 @@ def read_series(path: Path) -> pd.Series:
     frame[TARGET] = pd.to_numeric(frame[TARGET], errors="coerce")
     frame[TARGET] = frame[TARGET].replace([np.inf, -np.inf], np.nan)
     frame = frame.dropna(subset=["timestamp", TARGET])
-    frame = frame.sort_values("timestamp").drop_duplicates("timestamp", keep="first")
+    frame = frame.sort_values("timestamp", kind="stable").drop_duplicates("timestamp", keep="first")
     if frame.empty:
         raise ValueError(f"No valid observations found in {path}.")
     return frame.set_index("timestamp")[TARGET].astype(float).sort_index()
