@@ -47,22 +47,27 @@ def download_and_extract(output_dir: Path, force: bool = False) -> Path:
     with urllib.request.urlopen(request, timeout=45) as response, zip_path.open("wb") as target:
         shutil.copyfileobj(response, target)
 
-    with zipfile.ZipFile(zip_path) as archive:
-        members = [
-            member for member in archive.namelist()
-            if Path(member).name == DATASET_FILENAME and not member.endswith("/")
-        ]
-        if not members:
-            raise ValueError(
-                f"Expected {DATASET_FILENAME!r} was not found in the UCI ZIP."
-            )
-        # Extract only the expected file to avoid trusting archive paths.
-        with archive.open(members[0]) as source, destination.open("wb") as target:
-            shutil.copyfileobj(source, target)
+    temporary_destination = output_dir / f"{DATASET_FILENAME}.tmp"
+    try:
+        with zipfile.ZipFile(zip_path) as archive:
+            members = [
+                member for member in archive.namelist()
+                if Path(member).name == DATASET_FILENAME and not member.endswith("/")
+            ]
+            if not members:
+                raise ValueError(
+                    f"Expected {DATASET_FILENAME!r} was not found in the UCI ZIP."
+                )
+            # Extract only the expected file to a temporary path, so a failed
+            # refresh cannot truncate a previously downloaded valid dataset.
+            with archive.open(members[0]) as source, temporary_destination.open("wb") as target:
+                shutil.copyfileobj(source, target)
 
-    if destination.stat().st_size == 0:
-        destination.unlink(missing_ok=True)
-        raise ValueError("The downloaded dataset file is empty.")
+        if temporary_destination.stat().st_size == 0:
+            raise ValueError("The downloaded dataset file is empty.")
+        temporary_destination.replace(destination)
+    finally:
+        temporary_destination.unlink(missing_ok=True)
 
     zip_path.unlink(missing_ok=True)
     write_metadata(
