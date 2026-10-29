@@ -25,12 +25,14 @@ def read_series(path: Path) -> pd.Series:
         raise FileNotFoundError(
             f"Processed file not found: {path}. Run scripts/preprocess_data.py first."
         )
-    frame = pd.read_csv(path, parse_dates=["timestamp"])
+    frame = pd.read_csv(path)
     required = {"timestamp", "active_power_kw"}
     missing = required.difference(frame.columns)
     if missing:
         raise ValueError(f"{path.name} is missing required columns: {sorted(missing)}")
+    frame["timestamp"] = pd.to_datetime(frame["timestamp"], errors="coerce")
     frame["active_power_kw"] = pd.to_numeric(frame["active_power_kw"], errors="coerce")
+    frame["active_power_kw"] = frame["active_power_kw"].replace([float("inf"), float("-inf")], float("nan"))
     frame = frame.dropna(subset=["timestamp", "active_power_kw"])
     frame = frame.sort_values("timestamp").drop_duplicates("timestamp", keep="first")
     if frame.empty:
