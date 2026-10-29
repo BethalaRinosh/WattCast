@@ -47,6 +47,41 @@ def read_series(path: Path) -> pd.Series:
     return series
 
 
+
+def _longest_regular_segment(series: pd.Series, frequency: str) -> tuple[pd.Series, dict[str, Any]]:
+    """Return the longest regular segment, filling only internal gaps up to 3 bins."""
+    series = series.sort_index()
+    full_index = pd.date_range(
+        start=series.index.min().floor(frequency),
+        end=series.index.max().floor(frequency),
+        freq=frequency,
+        name=series.index.name or "timestamp",
+    )
+    regular = series.reindex(full_index).astype(float)
+    regular = regular.interpolate(method="time", limit=3, limit_area="inside")
+    valid = regular.notna()
+    if not valid.any():
+        raise ValueError(f"No usable observations remain after regularizing frequency={frequency}.")
+    groups = valid.ne(valid.shift(fill_value=False)).cumsum()
+    runs = [regular.loc[valid & groups.eq(group)] for group in groups[valid].unique()]
+    segment = max(runs, key=len).copy()
+    if len(segment) < 3:
+        raise ValueError(f"Longest regular segment is too short for frequency={frequency}.")
+    return segment, {
+        "frequency": frequency,
+        "input_observations": int(len(series)),
+        "regular_grid_observations": int(len(full_index)),
+        "interpolated_bins": int((regular.notna() & ~series.reindex(full_index).notna()).sum()),
+        "longest_contiguous_segment_observations": int(len(segment)),
+        "segment_start": segment.index.min().isoformat(),
+        "segment_end": segment.index.max().isoformat(),
+        "policy": (
+            "Reindex to a regular time grid, interpolate at most three consecutive internal "
+            "missing bins, and use the longest remaining contiguous segment for diagnostics. "
+            "Longer gaps are not bridged."
+        ),
+    }
+
 def _stationarity_result(series: pd.Series, label: str) -> dict[str, Any]:
     """Run ADF and KPSS; include interpretation based on the conventional 5% level."""
     values = np.asarray(series.dropna(), dtype=float)
@@ -191,8 +226,12 @@ def run_time_series_analysis(
 ) -> dict[str, Any]:
     """Run hourly/daily decomposition plus daily stationarity and ACF/PACF diagnostics."""
     processed_dir, output_dir = Path(processed_dir), Path(output_dir)
-    hourly = read_series(processed_dir / "hourly_energy.csv")
-    daily = read_series(processed_dir / "daily_energy.csv")
+    hourly_raw = read_series(processed_dir / "hourly_energy.csv")
+    daily_raw = read_series(processed_dir / "daily_energy.csv")
+    # Seasonal periods and autocorrelation lags assume equally spaced observations.
+    # Preserve that assumption without filling long gaps with invented values.
+    hourly, hourly_grid = _longest_regular_segment(hourly_raw, "h")
+    daily, daily_grid = _longest_regular_segment(daily_raw, "D")
     report_path = processed_dir / "preprocessing_report.json"
     source_type = "unknown"
     if report_path.exists():
@@ -209,6 +248,7 @@ def run_time_series_analysis(
         "source_type": source_type,
         "source_label": source_label,
         "target": "Mean active power (kW)",
+        "regularization": {"hourly": hourly_grid, "daily": daily_grid},
         "decomposition": {
             "hourly": _decompose(hourly, 24, "hourly", output_dir, source_label),
             "daily": _decompose(daily, 7, "daily", output_dir, source_label),
