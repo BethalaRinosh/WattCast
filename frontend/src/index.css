@@ -78,3 +78,4 @@ button:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+\n@media (min-width: 640px) {\n  .surface-card {\n    padding: 1.5rem;\n  }\n}\n
