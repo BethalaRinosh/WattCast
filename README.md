@@ -652,3 +652,16 @@ Check the following in the browser:
 5. The production build finishes without TypeScript or Vite errors.
 
 **Verification status:** The scaffold is committed to GitHub. Do not treat the local build/browser checklist as passed until its output has been checked on the development machine.
+
+
+### Step 11 build fix: Vite environment types
+
+The initial local production build identified missing TypeScript declarations for `import.meta.env`. The frontend now includes `frontend/src/vite-env.d.ts` with Vite's client type reference. This supplies the types for Vite environment variables without weakening strict TypeScript checks or changing runtime behavior.
+
+After pulling the fix, verify from `frontend/`:
+
+```powershell
+npm run build
+```
+
+The build is not marked verified until the local command completes successfully.
