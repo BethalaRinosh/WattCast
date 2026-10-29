@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Activity, CalendarDays, Gauge, TrendingUp } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import {
   CartesianGrid,
   Line,
@@ -31,7 +32,7 @@ function readableModel(model: string | undefined): string {
     sarima: "SARIMA",
     random_forest_lag_calendar: "Random Forest",
   };
-  return names[model] ?? model.replaceAll("_", " ");
+  return names[model] ?? model.replace(/_/g, " ");
 }
 
 export default function OverviewPage() {
@@ -131,7 +132,7 @@ export default function OverviewPage() {
   );
 }
 
-function MetricCard({ icon: Icon, label, value, detail }: { icon: typeof Gauge; label: string; value: string; detail: string }) {
+function MetricCard({ icon: Icon, label, value, detail }: { icon: LucideIcon; label: string; value: string; detail: string }) {
   return (
     <section className="surface-card min-w-0">
       <div className="flex items-center justify-between gap-2">
