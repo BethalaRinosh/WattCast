@@ -153,6 +153,7 @@ def main() -> int:
         return 0
     except (OSError, ValueError, zipfile.BadZipFile, TimeoutError) as exc:
         LOGGER.error("UCI download failed: %s", exc)
+        (output_dir / "uci_household_power_consumption.zip").unlink(missing_ok=True)
         # Never create synthetic metadata while an existing real file will still
         # be selected by discover_raw_dataset(). Keep provenance consistent.
         if existing_real.exists():
