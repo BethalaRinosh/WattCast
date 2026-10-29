@@ -4,7 +4,7 @@
 
 WattCast is an academic micro project for the Data Science 3rd Internal Assessment. It analyses historical electricity consumption and compares time-series and machine-learning forecasting methods through a web dashboard.
 
-> **Project status:** Steps 1–7 are verified locally on real UCI data. Step 8's Random Forest lag/calendar pipeline and tests have been added to the repository; local verification and real-data metrics are pending. Do not treat model scores as verified until the user runs the commands and confirms the output.
+> **Project status:** Steps 1–7 are verified locally on real UCI data. Step 8's Random Forest pipeline completed on real UCI data and its scores are recorded below. The first test run had 49 passing tests and one overly strict floating-point equality assertion; that assertion has been changed to a tight numerical-tolerance comparison. Rerun the focused and full test suites before marking Step 8 fully verified.
 
 ## Problem statement
 Electricity consumption changes over time due to recurring daily and weekly routines, longer-term trends, and random variation. WattCast aims to explore these patterns and compare forecasting approaches using a chronological test set.
@@ -327,6 +327,8 @@ A: It trains only on the training segment and forecasts recursively. Actual hold
 **Q: What is a Random Forest?**  
 A: An ensemble of decision trees whose regression predictions are aggregated. It can learn nonlinear relationships, but still must be compared with simple baselines on the same test period.
 
+**Step 8 real-data results (user-reported run):** Random Forest achieved hourly MAE 0.57555 kW, RMSE 0.79169 kW and MAPE 81.668%; daily MAE 0.19519 kW, RMSE 0.26134 kW and MAPE 23.026%. The same chronological holdout was used for the reported Step 6–8 runs. On hourly data, Holt-Winters remains ahead of Random Forest on MAE and RMSE. On daily data, Random Forest has lower MAE and RMSE than the Step 6 seasonal-naive and Step 7 statistical candidates. MAPE is not the only selection criterion and can be sensitive to low actual values. These results are reported from the user's terminal output and are not hardcoded into the application.
+
 ## Methodology
 1. Repository scaffold and project documentation.
 2. Dataset download and reproducible synthetic fallback.
@@ -465,7 +467,7 @@ Academic project, B.Tech CSE (AI & ML).
 - **Repository audit before Step 6:** Found and fixed partial interpolation across long missing runs, added explicit invalid-timestamp and duplicate counts to preprocessing inspection, hardened EDA input validation, made UCI extraction atomic so a failed refresh cannot truncate an existing dataset, corrected downloader provenance when refreshing an existing real dataset fails, made script imports package-safe, and ignored generated report files while retaining report directories. Added offline tests for acquisition, fallback provenance and data-quality edge cases. The user subsequently confirmed all 21 audit tests passed and the preprocessing, EDA and time-series diagnostic scripts completed on the real dataset.
 - **Step 6/16 — Chronological split and baselines (verified locally):** Added chronological train/test splitting for hourly and daily data, naive and seasonal-naive forecasts, MAE/RMSE/zero-safe MAPE metrics, JSON/CSV reports, forecast plots and tests. The user confirmed 13 Step 6 tests, all 34 backend tests and the real-data baseline script passed; the working tree was clean.
 - **Step 7/16 — Statistical forecasting candidates (verified locally):** Added Holt-Winters, ARIMA(1,1,1) and SARIMA candidates, reusing Step 6's regularization and chronological holdout. Fixed direct-script imports with a package/direct-script fallback. The user confirmed the pipeline completed on real UCI data and all 41 backend tests passed. Hourly Holt-Winters achieved MAE 0.53257 kW / RMSE 0.75694 kW; daily SARIMA achieved MAE 0.28683 kW / RMSE 0.36199 kW among the Step 7 candidates. Full metrics and the tested split periods are documented above.
-- **Step 8/16 — Lag-feature machine-learning model (implementation committed; local verification pending):** Added a deterministic Random Forest using past target lags, shifted rolling means and calendar features for hourly and daily data. The holdout is forecast recursively so actual test targets do not feed later test predictions. Focused tests, full-suite tests and real-data scores must be confirmed by the user before this step is marked verified.
+- **Step 8/16 — Lag-feature machine-learning model (pipeline run; test fix pending verification):** Added a Random Forest using past target lags, shifted rolling means and calendar features for hourly and daily data. The user confirmed the real-data pipeline completed. Reported scores: hourly MAE 0.57555 kW / RMSE 0.79169 kW / MAPE 81.668%; daily MAE 0.19519 kW / RMSE 0.26134 kW / MAPE 23.026%. The first test run had 49 passes and one failure because exact floating-point equality was required for two repeated predictions. The assertion now uses tight numerical tolerance; the user must rerun tests before this step is marked fully verified.
 
 ## Viva checkpoint
 **Q: Why do we resample the original minute-level data to hourly and daily data?**  
