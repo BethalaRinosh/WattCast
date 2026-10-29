@@ -4,7 +4,7 @@
 
 WattCast is an academic micro project for the Data Science 3rd Internal Assessment. It analyses historical electricity consumption and compares time-series and machine-learning forecasting methods through a web dashboard.
 
-> **Project status:** Steps 1–10 are verified locally. Step 9 was confirmed on real UCI data with 7 focused evaluation tests and 57 passing backend tests. Step 10's API tests passed 8/8 and the complete backend suite passed 65/65; Uvicorn started successfully and `/api/health`, `/docs`, and `/openapi.json` returned HTTP 200. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
+> **Project status:** Steps 1–10 are verified locally. Step 9 was confirmed on real UCI data with 7 focused evaluation tests and 57 passing backend tests. Step 10's API tests passed 8/8 and the complete backend suite passed 65/65; Uvicorn started successfully and `/api/health`, `/docs`, and `/openapi.json` returned HTTP 200. Step 11's React/Vite frontend scaffold is committed; local npm build and browser verification are pending. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
 
 ## Problem statement
 Electricity consumption changes over time due to recurring daily and weekly routines, longer-term trends, and random variation. WattCast aims to explore these patterns and compare forecasting approaches using a chronological test set.
@@ -590,3 +590,65 @@ A: EDA helps us understand the target's distribution, date coverage and recurrin
 
 **Q: Why calculate an average profile by hour and weekday?**  
 A: Grouping observations by hour-of-day or day-of-week can reveal recurring daily and weekly patterns. These are descriptive summaries; the later evaluation step is needed to determine whether a forecasting model can predict future values accurately.
+
+
+## Step 11: React frontend foundation
+
+The frontend lives in `frontend/` and uses React, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide icons and Recharts. This step creates the app shell and API integration foundation; the data explorer, decomposition visualisations, model comparison and forecast experience are built in Steps 12–14.
+
+### Start the frontend
+
+From the repository root, pull the latest changes, then run:
+
+```powershell
+cd frontend
+Copy-Item .env.example .env
+npm install
+npm run dev
+```
+
+Vite is configured to use `http://127.0.0.1:5173`. Keep the FastAPI process running in a second terminal from the repository root:
+
+```powershell
+python -m uvicorn backend.app.main:app --reload
+```
+
+Open the local URL printed by Vite. If your API is hosted elsewhere, edit `frontend/.env`:
+
+```dotenv
+VITE_API_BASE_URL=http://127.0.0.1:8000
+```
+
+The value is the API origin, without an `/api` suffix. Vite reads environment variables at startup, so restart the dev server after changing the file.
+
+### What Step 11 includes
+
+- Responsive React single-page application shell with desktop sidebar and compact mobile navigation.
+- Tailwind design tokens and a restrained light/dark theme toggle.
+- Framer Motion page transitions and Lucide interface icons.
+- Reusable typed API client in `frontend/src/api/client.ts`, with HTTP error parsing and a clear message when the API cannot be reached.
+- Initial real connection check against `GET /api/health`; connection state is displayed as checking, connected or offline.
+- Recharts is installed for later data visualisations. It is intentionally not used to display invented metrics in this scaffold.
+- Strict TypeScript settings and a production build script: `npm run build`.
+
+### API and data integrity
+
+The frontend reads its API base URL from `VITE_API_BASE_URL`, falling back to `http://127.0.0.1:8000`. The current screen checks API health only. It does not yet load summary metrics or chart data. Steps 12–14 will connect those screens to the existing FastAPI endpoints and use the saved analysis artifacts.
+
+### Step 11 local verification checklist
+
+After `npm install` completes:
+
+```powershell
+npm run build
+npm run dev
+```
+
+Check the following in the browser:
+1. The app loads at `http://127.0.0.1:5173`.
+2. With FastAPI running, the status changes to **API connected**.
+3. With FastAPI stopped, the screen shows a useful connection error instead of crashing.
+4. The theme toggle works, and the navigation remains usable at mobile widths.
+5. The production build finishes without TypeScript or Vite errors.
+
+**Verification status:** The scaffold is committed to GitHub. Do not treat the local build/browser checklist as passed until its output has been checked on the development machine.
