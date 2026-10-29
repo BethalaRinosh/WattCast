@@ -213,8 +213,8 @@ def clean_and_resample(
             "is numerically equivalent to approximate kWh consumed during that hour."
         ),
         "missing_value_policy": (
-            "Resample with mean; interpolate at most three consecutive missing "
-            "resampled bins using time interpolation; drop remaining missing bins."
+            "Resample with mean; interpolate only complete internal missing runs of "
+            "at most three bins; drop all remaining missing bins."
         ),
         "outlier_policy": (
             "Count IQR outliers for inspection but retain them to avoid deleting "
