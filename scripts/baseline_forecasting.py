@@ -41,6 +41,55 @@ def read_series(path: Path) -> pd.Series:
     return frame.set_index("timestamp")[TARGET].astype(float).sort_index()
 
 
+def longest_regular_segment(
+    series: pd.Series, frequency: str, max_gap: int = 3
+) -> tuple[pd.Series, dict[str, Any]]:
+    """Regularize timestamps, fill only complete short internal gaps, then select the longest contiguous run."""
+    series = series.sort_index()
+    full_index = pd.date_range(
+        start=series.index.min().floor(frequency),
+        end=series.index.max().floor(frequency),
+        freq=frequency,
+        name=series.index.name or "timestamp",
+    )
+    regular = series.reindex(full_index).astype(float)
+    missing = regular.isna()
+    interpolated = regular.interpolate(method="time")
+    run_ids = missing.ne(missing.shift(fill_value=False)).cumsum()
+    allowed = pd.Series(False, index=regular.index)
+    for run_id in run_ids[missing].unique():
+        run = run_ids.eq(run_id) & missing
+        positions = np.flatnonzero(run.to_numpy())
+        if len(positions) == 0 or len(positions) > max_gap:
+            continue
+        first, last = int(positions[0]), int(positions[-1])
+        if first > 0 and last < len(regular) - 1:
+            if not missing.iloc[first - 1] and not missing.iloc[last + 1]:
+                allowed.loc[run] = True
+    regular.loc[allowed] = interpolated.loc[allowed]
+    valid = regular.notna()
+    if not valid.any():
+        raise ValueError(f"No valid observations remain after regularizing frequency={frequency}.")
+    group_ids = valid.ne(valid.shift(fill_value=False)).cumsum()
+    runs = [regular.loc[valid & group_ids.eq(group)] for group in group_ids[valid].unique()]
+    segment = max(runs, key=len).copy()
+    if len(segment) < 3:
+        raise ValueError(f"Longest regular segment is too short for frequency={frequency}.")
+    return segment, {
+        "frequency": frequency,
+        "input_observations": int(len(series)),
+        "regular_grid_observations": int(len(full_index)),
+        "interpolated_bins": int(allowed.sum()),
+        "longest_contiguous_segment_observations": int(len(segment)),
+        "segment_start": segment.index.min().isoformat(),
+        "segment_end": segment.index.max().isoformat(),
+        "policy": (
+            f"Reindex to a regular {frequency} grid, interpolate only complete internal gaps "
+            f"of at most {max_gap} bins, then evaluate on the longest remaining contiguous segment."
+        ),
+    }
+
+
 def chronological_split(
     series: pd.Series, test_size: float = 0.2
 ) -> tuple[pd.Series, pd.Series]:
@@ -135,7 +184,9 @@ def run_baselines(
             "training_period_precedes_test_period": True,
         },
         "series": {},
+        "regularization": {},
         "method_notes": [
+            "Each input is first regularized to its expected hourly/daily grid; only complete internal gaps of at most three bins are interpolated, and the longest remaining contiguous segment is used.",
             "The final chronological fraction is held out; no test observations are used to form forecasts.",
             "Naive predicts the final training value for every test timestamp.",
             "Seasonal-naive repeats the last full season observed in training (24 hours for hourly data, 7 days for daily data).",
@@ -149,6 +200,8 @@ def run_baselines(
         ("daily", "daily_energy.csv", 7, "7-day"),
     ):
         series = read_series(processed_dir / filename)
+        series, regularization = longest_regular_segment(series, "h" if label == "hourly" else "D")
+        summary["regularization"][label] = regularization
         train, test = chronological_split(series, test_size=test_size)
         predictions = {
             "naive": naive_forecast(train, len(test)),
