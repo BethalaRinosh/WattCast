@@ -1,0 +1,11 @@
+# Minimal backend dependencies; modelling libraries will be pinned after pipeline setup.
+fastapi
+uvicorn[standard]
+pandas
+numpy
+statsmodels
+scikit-learn
+pydantic
+python-dotenv
+pytest
+httpx
