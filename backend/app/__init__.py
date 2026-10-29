@@ -1,0 +1,1 @@
+"""WattCast backend application package."""
