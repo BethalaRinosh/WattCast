@@ -81,7 +81,7 @@ def build_eda_summary(
         "daily": _describe(daily),
         "intraday_mean_power_kw": profile_dict(hourly_profile, [f"{hour:02d}:00" for hour in range(24)]),
         "weekday_mean_power_kw": profile_dict(weekday_profile, weekday_names),
-        "monthly_mean_power_kw": profile_dict(monthly_profile, [str(month) for month in range(1, 13)]),
+        "monthly_mean_power_kw": {\n            str(month): (float(monthly_profile.loc[month]) if pd.notna(monthly_profile.loc[month]) else None)\n            for month in range(1, 13)\n        },
         "peak_mean_hour": int(valid_hours.idxmax()) if not valid_hours.empty else None,
         "lowest_mean_hour": int(valid_hours.idxmin()) if not valid_hours.empty else None,
         "highest_mean_weekday": weekday_names[int(valid_weekdays.idxmax())] if not valid_weekdays.empty else None,
