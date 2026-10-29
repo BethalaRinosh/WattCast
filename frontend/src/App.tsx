@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Activity,
@@ -319,7 +320,7 @@ function FeatureCard({
   description,
   onClick,
 }: {
-  icon: typeof Database;
+  icon: LucideIcon;
   index: string;
   title: string;
   description: string;
