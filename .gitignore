@@ -20,6 +20,8 @@ backend/reports/time_series/*
 !backend/reports/time_series/.gitkeep
 backend/reports/baselines/*
 !backend/reports/baselines/.gitkeep
+backend/reports/ml_forecasting/*
+!backend/reports/ml_forecasting/.gitkeep
 backend/models/*
 !backend/models/.gitkeep
 reports/figures/*
