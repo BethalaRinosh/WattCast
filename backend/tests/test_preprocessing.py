@@ -4,7 +4,12 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from scripts.data_processing import clean_and_resample, inspect_dataset, load_dataset
+from scripts.data_processing import (
+    _interpolate_short_internal_gaps,
+    clean_and_resample,
+    inspect_dataset,
+    load_dataset,
+)
 
 
 def test_synthetic_csv_loads_into_common_schema(tmp_path):
@@ -59,3 +64,33 @@ def test_inspection_reports_frequency_and_missing_values():
 def test_missing_input_raises_helpful_error(tmp_path):
     with pytest.raises(FileNotFoundError, match="does not exist"):
         load_dataset(tmp_path / "missing.csv", source_type="synthetic")
+
+
+
+def test_only_short_complete_internal_gaps_are_interpolated():
+    index = pd.date_range("2024-01-01", periods=7, freq="h")
+    short_gap = pd.Series([1.0, 1.0, float("nan"), float("nan"), 2.0, 2.0, 2.0], index=index)
+    filled = _interpolate_short_internal_gaps(short_gap, max_gap=3)
+    assert filled.iloc[2:4].notna().all()
+
+    long_gap = pd.Series([1.0, float("nan"), float("nan"), float("nan"),
+                          float("nan"), 2.0, 2.0], index=index)
+    not_filled = _interpolate_short_internal_gaps(long_gap, max_gap=3)
+    assert not_filled.iloc[1:5].isna().all()
+
+
+def test_inspection_preserves_invalid_timestamp_and_duplicate_counts(tmp_path):
+    path = tmp_path / "synthetic_hourly_energy.csv"
+    pd.DataFrame({
+        "timestamp": [
+            "2024-01-01 00:00:00",
+            "2024-01-01 00:00:00",
+            "bad timestamp",
+            "2024-01-01 01:00:00",
+        ],
+        "global_active_power_kw": [1.0, 2.0, 9.0, 3.0],
+    }).to_csv(path, index=False)
+    loaded = load_dataset(path, source_type="synthetic")
+    report = inspect_dataset(loaded, "synthetic")
+    assert report["invalid_timestamps_dropped"] == 1
+    assert report["duplicate_timestamps"] == 1
