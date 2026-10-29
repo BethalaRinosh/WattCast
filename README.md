@@ -4,7 +4,7 @@
 
 WattCast is an academic micro project for the Data Science 3rd Internal Assessment. It analyses historical electricity consumption and compares time-series and machine-learning forecasting methods through a web dashboard.
 
-> **Project status:** Steps 1–10 are verified locally. Step 9 was confirmed on real UCI data with 7 focused evaluation tests and 57 passing backend tests. Step 10's API tests passed 8/8 and the complete backend suite passed 65/65; Uvicorn started successfully and `/api/health`, `/docs`, and `/openapi.json` returned HTTP 200. Step 11's React/Vite frontend scaffold is committed; local npm build and browser verification are pending. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
+> **Project status:** Steps 1–10 are verified locally. Step 9 was confirmed on real UCI data with 7 focused evaluation tests and 57 passing backend tests. Step 10's API tests passed 8/8 and the complete backend suite passed 65/65; Uvicorn started successfully and `/api/health`, `/docs`, and `/openapi.json` returned HTTP 200. Step 11's React/Vite frontend scaffold is committed and the user confirmed `npm run build` succeeds locally after the Vite type and CSS fixes; browser verification is pending. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
 
 ## Problem statement
 Electricity consumption changes over time due to recurring daily and weekly routines, longer-term trends, and random variation. WattCast aims to explore these patterns and compare forecasting approaches using a chronological test set.
@@ -651,7 +651,7 @@ Check the following in the browser:
 4. The theme toggle works, and the navigation remains usable at mobile widths.
 5. The production build finishes without TypeScript or Vite errors.
 
-**Verification status:** The scaffold is committed to GitHub. Do not treat the local build/browser checklist as passed until its output has been checked on the development machine.
+**Verification status:** The user confirmed the production build completes successfully with `npm run build`. Browser/API connectivity, offline error handling, theme toggle and mobile navigation still need manual verification.
 
 
 ### Step 11 build fix: Vite environment types
@@ -664,4 +664,4 @@ After pulling the fix, verify from `frontend/`:
 npm run build
 ```
 
-The build is not marked verified until the local command completes successfully.
+The user confirmed the local production build completed successfully after the CSS fix. Browser/API checks remain pending.
