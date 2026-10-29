@@ -4,7 +4,7 @@
 
 WattCast is an academic micro project for the Data Science 3rd Internal Assessment. It analyses historical electricity consumption and compares time-series and machine-learning forecasting methods through a web dashboard.
 
-> **Project status:** Steps 1–10 are verified locally. Step 9 was confirmed on real UCI data with 7 focused evaluation tests and 57 passing backend tests. Step 10's API tests passed 8/8 and the complete backend suite passed 65/65; Uvicorn started successfully and `/api/health`, `/docs`, and `/openapi.json` returned HTTP 200. Step 11's React/Vite frontend scaffold is committed and the user confirmed `npm run build` succeeds locally after the Vite type and CSS fixes; browser verification is pending. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
+> **Project status:** Steps 1–10 are verified locally. Step 9 was confirmed on real UCI data with 7 focused evaluation tests and 57 passing backend tests. Step 10's API tests passed 8/8 and the complete backend suite passed 65/65; Uvicorn started successfully and `/api/health`, `/docs`, and `/openapi.json` returned HTTP 200. Step 11's React/Vite frontend scaffold, production build and browser/API behavior were verified locally by the user. Step 12's API-backed Overview and Data explorer pages are committed; local build and data-view verification are pending. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
 
 ## Problem statement
 Electricity consumption changes over time due to recurring daily and weekly routines, longer-term trends, and random variation. WattCast aims to explore these patterns and compare forecasting approaches using a chronological test set.
@@ -429,6 +429,47 @@ A: A 404 means the requested saved artifact or result does not exist. A 422 mean
 **Q: Does `/api/health` mean the whole application is ready?**  
 A: No. It confirms the API process is responding. Data and report endpoints can still return 404 if earlier pipeline steps have not generated their artifacts.
 
+
+## Step 12: API-backed Overview and Data explorer
+
+The Overview and Data explorer pages are implemented in `frontend/src/pages/` and use the typed API client in `frontend/src/api/client.ts`. They consume saved outputs from the existing FastAPI endpoints; the UI does not hardcode dataset metrics or forecast scores.
+
+### Overview
+
+- Calls `GET /api/summary` for the EDA descriptive statistics, source provenance and model-evaluation rankings.
+- Calls `GET /api/series/hourly?limit=72` for a recent-observations line chart.
+- Displays hourly/daily mean and range, observation counts, source label, date coverage and the best hourly model by MAE when that information exists.
+- Shows loading, error and empty states rather than inventing data.
+- Distinguishes full-series summary statistics from the recent chart window.
+
+### Data explorer
+
+- Uses `GET /api/series/hourly?limit=N` or `GET /api/series/daily?limit=N` for the selected frequency and row limit.
+- Provides hourly/daily selection, selectable limits from 24 to 2,000 points, a line chart, selected-window descriptive statistics and a table of the latest 20 returned observations.
+- Exports the currently returned observations to CSV in the browser. It does not claim to export the entire original minute-level dataset.
+- Aborts obsolete fetch requests when the selected frequency or limit changes.
+
+### Run and verify
+
+From the repository root, make sure the preprocessing, EDA and evaluation artifacts exist, then run the backend:
+
+```powershell
+python -m uvicorn backend.app.main:app --reload
+```
+
+In another terminal:
+
+```powershell
+cd frontend
+npm run build
+npm run dev
+```
+
+Open the Vite URL. Confirm the Overview loads summary metrics and recent hourly observations, switch to Data explorer, change frequency and limit, and test CSV export. If the report/data endpoints return 404, run the corresponding WattCast pipeline scripts first. This is expected API behavior when the local generated artifacts are missing.
+
+**Verification status:** Step 12 code is committed. Do not mark the build or interactive data checks as verified until the user confirms their local output.
+
+
 ## Methodology
 1. Repository scaffold and project documentation.
 2. Dataset download and reproducible synthetic fallback.
@@ -651,7 +692,7 @@ Check the following in the browser:
 4. The theme toggle works, and the navigation remains usable at mobile widths.
 5. The production build finishes without TypeScript or Vite errors.
 
-**Verification status:** The user confirmed the production build completes successfully with `npm run build`. Browser/API connectivity, offline error handling, theme toggle and mobile navigation still need manual verification.
+**Verification status:** The user confirmed the production build completes successfully and browser/API connectivity, offline error handling, theme toggle and mobile navigation passed manual verification.
 
 
 ### Step 11 build fix: Vite environment types
@@ -664,4 +705,4 @@ After pulling the fix, verify from `frontend/`:
 npm run build
 ```
 
-The user confirmed the local production build completed successfully after the CSS fix. Browser/API checks remain pending.
+The user confirmed the local production build completed successfully after the CSS fix and then confirmed the browser/API, offline-state, theme and mobile-navigation checks passed.
