@@ -31,7 +31,6 @@ def test_candidate_fitting_records_failure_without_raising(monkeypatch):
             raise RuntimeError("deliberate test failure")
 
     # Make only the first candidate fail while leaving the others untouched.
-    original = module.ExponentialSmoothing
     monkeypatch.setattr(module, "ExponentialSmoothing", lambda *args, **kwargs: BrokenFit())
     index = pd.date_range("2024-01-01", periods=24 * 20, freq="h")
     train = pd.Series(1.0 + np.sin(np.arange(len(index)) * 2 * np.pi / 24), index=index)
