@@ -49,6 +49,11 @@ python scripts/generate_synthetic_data.py --years 4 --seed 42
 
 To require real data and refuse fallback, use `python scripts/download_data.py --no-synthetic-fallback`. Synthetic output contains `data_source=synthetic` and metadata with `"source_type": "synthetic"`. Synthetic values are simulated, not observed household measurements.
 
+Run the offline data-acquisition tests:
+```bash
+python -m pytest backend/tests/test_data_acquisition.py -q
+```
+
 ## Step 3: Data loading, cleaning and resampling
 Implemented in:
 - `scripts/data_processing.py`: reusable functions to discover, load, inspect, clean and resample either source.
@@ -234,6 +239,7 @@ WattCast/
 │   ├── models/
 │   ├── notebooks/
 │   ├── tests/
+│   │   ├── test_data_acquisition.py
 │   │   ├── test_preprocessing.py
 │   │   ├── test_eda.py
 │   │   └── test_time_series_analysis.py
@@ -281,7 +287,7 @@ Academic project, B.Tech CSE (AI & ML).
 - **Step 3/16 — Loading, inspection, cleaning and resampling:** Added a shared loader for the UCI semicolon-delimited source and synthetic CSV, inspection summary, IQR outlier reporting, limited time interpolation, hourly/daily resampling, saved output/report paths and preprocessing tests. The user verified the real-data preprocessing locally.
 - **Step 4/16 — Exploratory data analysis:** Added `scripts/eda.py` to compute descriptive statistics and intraday, weekday and monthly profiles, write JSON/CSV summaries and produce four labelled charts. The user verified the script on real data; 4 EDA tests and all 9 then-existing backend tests passed.
 - **Step 5/16 — Time-series diagnostics:** Added additive hourly/daily decomposition, ADF and KPSS tests on daily levels and first differences, daily ACF/PACF tables and plots, source-labelled JSON outputs, and focused tests. The user confirmed the diagnostics ran on real UCI data and 13 tests passed. A subsequent repository audit added edge-case tests and hardening changes; the expanded suite must pass before Step 6.
-- **Repository audit before Step 6:** Found and fixed partial interpolation across long missing runs, added explicit invalid-timestamp and duplicate counts to preprocessing inspection, hardened EDA input validation, made UCI extraction atomic so a failed refresh cannot truncate an existing dataset, corrected downloader provenance when refreshing an existing real dataset fails, and ignored generated report files while retaining report directories. Added edge-case tests for these data-quality rules. These audit changes are pending local verification.
+- **Repository audit before Step 6:** Found and fixed partial interpolation across long missing runs, added explicit invalid-timestamp and duplicate counts to preprocessing inspection, hardened EDA input validation, made UCI extraction atomic so a failed refresh cannot truncate an existing dataset, corrected downloader provenance when refreshing an existing real dataset fails, made script imports package-safe, and ignored generated report files while retaining report directories. Added offline tests for acquisition, fallback provenance and data-quality edge cases. The expanded suite is pending local verification.
 - **Next:** Step 6, chronological train/test split and baseline forecasts. Do not begin until the expanded tests pass and Step 6 is approved.
 
 ## Viva checkpoint
