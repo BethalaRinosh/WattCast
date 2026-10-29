@@ -124,6 +124,20 @@ def main() -> int:
     existing_real = output_dir / DATASET_FILENAME
     if existing_real.exists() and not args.force:
         LOGGER.info("Real dataset already exists; skipping download.")
+        metadata_path = output_dir / METADATA_FILENAME
+        try:
+            current_metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            current_metadata = {}
+        if current_metadata.get("source_type") != "real" or current_metadata.get("data_file") != DATASET_FILENAME:
+            write_metadata(
+                metadata_path,
+                source_type="real",
+                source_name="UCI Individual Household Electric Power Consumption",
+                source_url=UCI_DATASET_URL,
+                data_file=DATASET_FILENAME,
+                note="Existing real UCI dataset reused; no new download was performed.",
+            )
         return 0
 
     try:
@@ -131,6 +145,22 @@ def main() -> int:
         return 0
     except (OSError, ValueError, zipfile.BadZipFile, TimeoutError) as exc:
         LOGGER.error("UCI download failed: %s", exc)
+        # Never create synthetic metadata while an existing real file will still
+        # be selected by discover_raw_dataset(). Keep provenance consistent.
+        if existing_real.exists():
+            write_metadata(
+                output_dir / METADATA_FILENAME,
+                source_type="real",
+                source_name="UCI Individual Household Electric Power Consumption",
+                source_url=UCI_DATASET_URL,
+                data_file=DATASET_FILENAME,
+                note="Refresh attempt failed; the previously downloaded real dataset was retained.",
+            )
+            if args.no_synthetic_fallback:
+                LOGGER.error("Refresh failed; retained the existing real dataset and did not generate fallback.")
+                return 1
+            LOGGER.warning("Keeping the existing real dataset; synthetic fallback was not generated.")
+            return 0
         if args.no_synthetic_fallback:
             LOGGER.error("Synthetic fallback is disabled; no fallback file was generated.")
             return 1
