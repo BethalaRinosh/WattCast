@@ -75,7 +75,11 @@ def build_eda_summary(
     return {
         "project": "WattCast",
         "source_type": source_type,
-        "source_label": (\n            "SYNTHETIC SIMULATED DATA" if source_type == "synthetic"\n            else "REAL UCI DATA" if source_type == "real"\n            else "SOURCE TYPE UNKNOWN"\n        ),
+        "source_label": (
+            "SYNTHETIC SIMULATED DATA" if source_type == "synthetic"
+            else "REAL UCI DATA" if source_type == "real"
+            else "SOURCE TYPE UNKNOWN"
+        ),
         "target": "Mean active power (kW)",
         "hourly": _describe(hourly),
         "daily": _describe(daily),
