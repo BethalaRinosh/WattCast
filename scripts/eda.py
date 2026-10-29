@@ -81,7 +81,10 @@ def build_eda_summary(
         "daily": _describe(daily),
         "intraday_mean_power_kw": profile_dict(hourly_profile, [f"{hour:02d}:00" for hour in range(24)]),
         "weekday_mean_power_kw": profile_dict(weekday_profile, weekday_names),
-        "monthly_mean_power_kw": {\n            str(month): (float(monthly_profile.loc[month]) if pd.notna(monthly_profile.loc[month]) else None)\n            for month in range(1, 13)\n        },
+        "monthly_mean_power_kw": {
+            str(month): (float(monthly_profile.loc[month]) if pd.notna(monthly_profile.loc[month]) else None)
+            for month in range(1, 13)
+        },
         "peak_mean_hour": int(valid_hours.idxmax()) if not valid_hours.empty else None,
         "lowest_mean_hour": int(valid_hours.idxmin()) if not valid_hours.empty else None,
         "highest_mean_weekday": weekday_names[int(valid_weekdays.idxmax())] if not valid_weekdays.empty else None,
@@ -139,7 +142,8 @@ def run_eda(
         "weekday_profile_plot": "weekday_profile.png",
     }
     (output_dir / "eda_summary.json").write_text(
-        json.dumps(summary, indent=2, allow_nan=False) + "\n", encoding="utf-8"
+        json.dumps(summary, indent=2, allow_nan=False) + "
+", encoding="utf-8"
     )
 
     hourly.groupby(hourly.index.hour).mean().rename("mean_active_power_kw").rename_axis("hour").to_csv(
