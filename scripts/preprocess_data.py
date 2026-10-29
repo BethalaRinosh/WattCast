@@ -7,13 +7,22 @@ import json
 import logging
 from pathlib import Path
 
-from data_processing import (
-    clean_and_resample,
-    discover_raw_dataset,
-    inspect_dataset,
-    load_dataset,
-    write_processed_outputs,
-)
+try:
+    from .data_processing import (
+        clean_and_resample,
+        discover_raw_dataset,
+        inspect_dataset,
+        load_dataset,
+        write_processed_outputs,
+    )
+except ImportError:  # Support direct execution as `python scripts/preprocess_data.py`.
+    from data_processing import (
+        clean_and_resample,
+        discover_raw_dataset,
+        inspect_dataset,
+        load_dataset,
+        write_processed_outputs,
+    )
 
 LOGGER = logging.getLogger("wattcast.preprocess")
 ROOT = Path(__file__).resolve().parents[1]
