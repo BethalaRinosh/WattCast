@@ -182,10 +182,13 @@ WattCast/
 │   ├── data/
 │   │   ├── raw/
 │   │   └── processed/
+│   ├── reports/
+│   │   └── eda/                 # Generated EDA artefacts
 │   ├── models/
 │   ├── notebooks/
 │   ├── tests/
-│   │   └── test_preprocessing.py
+│   │   ├── test_preprocessing.py
+│   │   └── test_eda.py
 │   └── requirements.txt
 ├── frontend/
 │   └── src/
@@ -196,9 +199,9 @@ WattCast/
 ├── scripts/
 │   ├── data_processing.py
 │   ├── download_data.py
+│   ├── eda.py
 │   ├── generate_synthetic_data.py
 │   └── preprocess_data.py
-├── reports/
 ├── README.md
 ├── VIVA_PREP.md
 └── .gitignore
