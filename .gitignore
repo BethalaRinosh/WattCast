@@ -14,6 +14,10 @@ backend/data/raw/*
 !backend/data/raw/.gitkeep
 backend/data/processed/*
 !backend/data/processed/.gitkeep
+backend/reports/eda/*
+!backend/reports/eda/.gitkeep
+backend/reports/time_series/*
+!backend/reports/time_series/.gitkeep
 backend/models/*
 !backend/models/.gitkeep
 reports/figures/*
