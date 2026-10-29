@@ -74,3 +74,15 @@ def test_run_eda_writes_json_profiles_and_charts(tmp_path):
     ):
         assert (output / filename).exists()
         assert (output / filename).stat().st_size > 0
+
+
+
+def test_read_series_drops_invalid_timestamps_and_infinite_values(tmp_path):
+    path = tmp_path / "hourly_energy.csv"
+    pd.DataFrame({
+        "timestamp": ["2024-01-01 00:00:00", "bad timestamp", "2024-01-01 01:00:00"],
+        "active_power_kw": [1.0, 9.0, float("inf")],
+    }).to_csv(path, index=False)
+    series = read_series(path)
+    assert len(series) == 1
+    assert series.iloc[0] == pytest.approx(1.0)
