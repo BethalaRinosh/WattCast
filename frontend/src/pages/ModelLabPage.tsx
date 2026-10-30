@@ -63,7 +63,11 @@ export default function ModelLabPage() {
     .filter(([, model]) => model.status === "success" && typeof getMetricValue(model.metrics, metric) === "number")
     .map(([key, model]) => ({ key, name: modelName(key), score: getMetricValue(model.metrics, metric) as number }))
     .sort((a, b) => a.score - b.score), [models, metric]);
-  const bestModel = metric === "rmse" ? result?.best_by_rmse : result?.best_by_mae;
+  const bestModel = metric === "rmse"
+    ? result?.best_by_rmse
+    : metric === "mape"
+      ? rows[0]?.key
+      : result?.best_by_mae;
   const bestScore = bestModel ? getMetricValue(models[bestModel]?.metrics, metric) : undefined;
 
   return (
