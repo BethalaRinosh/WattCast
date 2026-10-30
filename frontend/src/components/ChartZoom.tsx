@@ -7,13 +7,13 @@ type ChartZoom = {
   isZoomed: boolean;
 };
 
-export function useChartZoom(pointCount: number): ChartZoom {
+export function useChartZoom(pointCount: number, resetKey: string | number = pointCount): ChartZoom {
   const lastIndex = Math.max(0, pointCount - 1);
   const [domain, setDomain] = useState<[number, number]>([0, lastIndex]);
 
   useEffect(() => {
     setDomain([0, lastIndex]);
-  }, [lastIndex]);
+  }, [lastIndex, resetKey]);
 
   const resetZoom = useCallback(() => setDomain([0, lastIndex]), [lastIndex]);
 
