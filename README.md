@@ -4,7 +4,7 @@
 
 WattCast is an academic micro project for the Data Science 3rd Internal Assessment. It analyses historical electricity consumption and compares time-series and machine-learning forecasting methods through a web dashboard.
 
-> **Project status:** Steps 1–13 are locally verified. Step 13 correlation analysis passed its focused tests (4/4), API tests (10/10) and full backend suite (71/71); the real UCI pipeline produced hourly and daily reports across all seven numeric measurements. The frontend correlation page was also confirmed working in the browser. Step 14 model-comparison and forecast dashboard pages are implemented; local production-build and browser verification are pending. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
+> **Project status:** Steps 1–14 are locally verified. Step 13 correlation analysis passed its focused tests (4/4), API tests (10/10) and full backend suite (71/71); the real UCI pipeline produced hourly and daily reports across all seven numeric measurements. The frontend correlation page was also confirmed working in the browser. Step 14 model-comparison and forecast dashboard pages are locally verified. Step 15 decomposition integration and dashboard polish are implemented; local verification is pending. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
 
 ## Problem statement
 Electricity consumption changes over time due to recurring daily and weekly routines, longer-term trends, and random variation. WattCast aims to explore these patterns and compare forecasting approaches using a chronological test set.
@@ -788,3 +788,56 @@ npm run dev
 Check Model lab with both frequencies and all three metrics. Check Forecasts with both frequencies and several model selections. Confirm that charts update, loading/error states behave correctly, and the page describes the data as holdout predictions rather than future forecasts.
 
 **Verification status:** Implementation committed. Awaiting the user's local TypeScript/Vite build and browser verification.
+
+
+## Step 15: Full dashboard integration and polish
+
+Step 15 connects the existing time-series decomposition output to the dashboard and tightens the overall application integration. It reuses saved backend artifacts; the browser does not rerun decomposition or fabricate values.
+
+### Decomposition dashboard
+
+- Calls `GET /api/decomposition/hourly` or `GET /api/decomposition/daily`.
+- Displays observed series, estimated trend, seasonal component and residual in four responsive charts.
+- Switches between hourly decomposition (seasonal period 24) and daily decomposition (seasonal period 7).
+- Reports returned row counts and non-missing values for each component.
+- Explains the additive decomposition assumption and why component values can be missing near the edges.
+- Includes loading, API error and empty-data states.
+
+### Integration and interface checks
+
+- The Decomposition navigation entry now opens the real analysis page instead of a placeholder.
+- All six dashboard sections are connected to their existing API-backed views: Overview, Data explorer, Correlation analysis, Decomposition, Model lab and Forecasts.
+- Existing responsive navigation, theme toggle, page transitions and shared visual language are retained.
+- No new forecasting logic or model training is performed in the frontend.
+
+### Verify Step 15
+
+Pull the changes and run the production build:
+
+```powershell
+git pull origin main
+cd frontend
+npm run build
+```
+
+Start the backend from the repository root:
+
+```powershell
+python -m uvicorn backend.app.main:app --reload
+```
+
+Start the frontend from `frontend/` in another terminal:
+
+```powershell
+npm run dev
+```
+
+Browser checklist:
+1. Open Decomposition and check hourly and daily selections.
+2. Confirm all four components render and tooltips show timestamps and kW values.
+3. Check the charts on a narrow/mobile viewport.
+4. Switch light/dark themes and move through all six navigation sections.
+5. Confirm the other five pages still load and their controls still update.
+6. Stop the backend temporarily and confirm the API-offline/error state is understandable; restart it afterward.
+
+**Verification status:** Step 15 implementation committed. Awaiting local production-build and browser verification.
