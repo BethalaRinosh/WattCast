@@ -848,3 +848,15 @@ Browser checklist:
 Native HTML select menus now explicitly use the active light/dark color scheme, with readable option foreground and background colors in both themes. This addresses browser-native option lists that otherwise retained a light menu with low-contrast text in dark mode.
 
 After pulling, run `npm run build` from `frontend/` and inspect dropdowns in Data explorer, Correlation analysis, Model lab and Forecasts while dark mode is enabled.
+
+### Model Lab follow-up: chart tooltip contrast
+
+The Model Lab ranking chart now uses an opaque dark tooltip with explicit high-contrast label and metric text, plus a subtle hover highlight. This keeps the model name readable when hovering over a bar in either dashboard theme.
+
+After pulling, verify from `frontend/`:
+
+```powershell
+npm run build
+```
+
+Then open Model lab, hover each bar in both light and dark themes, and confirm the tooltip model name and metric are readable.
