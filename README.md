@@ -4,7 +4,7 @@
 
 WattCast is an academic micro project for the Data Science 3rd Internal Assessment. It analyses historical electricity consumption and compares time-series and machine-learning forecasting methods through a web dashboard.
 
-> **Project status:** Steps 1–14 are locally verified. Step 13 correlation analysis passed its focused tests (4/4), API tests (10/10) and full backend suite (71/71); the real UCI pipeline produced hourly and daily reports across all seven numeric measurements. The frontend correlation page was also confirmed working in the browser. Step 14 model-comparison and forecast dashboard pages are locally verified. Step 15 decomposition integration and dashboard polish are locally verified. A follow-up native dropdown contrast fix for dark mode is committed; its local build check is pending. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
+> **Project status:** Steps 1–15 are locally verified. Step 13 correlation analysis passed its focused tests (4/4), API tests (10/10) and full backend suite (71/71); the real UCI pipeline produced hourly and daily reports across all seven numeric measurements. The frontend correlation page was also confirmed working in the browser. Step 14 model-comparison and forecast dashboard pages are locally verified. Step 15 decomposition integration and dashboard polish are locally verified. The user also confirmed the Model Lab chart-tooltip contrast fix in the browser. Step 16 adds final documentation and viva preparation. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
 
 ## Problem statement
 Electricity consumption changes over time due to recurring daily and weekly routines, longer-term trends, and random variation. WattCast aims to explore these patterns and compare forecasting approaches using a chronological test set.
@@ -521,18 +521,18 @@ Planned local setup:
 The final README will include one-command startup and separate manual backend/frontend commands after those scripts exist.
 
 ## API
-Planned API base path: `/api`
+The read-only FastAPI service exposes saved analysis artifacts under `/api`. Model fitting and analysis are performed by the Python scripts, not by API requests.
 
-| Endpoint | Purpose | Status |
-|---|---|---|
-| `GET /api/health` | Service health | Planned |
-| `GET /api/summary` | Consumption KPIs and best model | Planned |
-| `GET /api/series` | Hourly/daily time series | Planned |
-| `GET /api/eda` | Exploratory summaries | Planned |
-| `GET /api/decomposition` | Trend, seasonal and residual components | Planned |
-| `GET /api/stationarity` | ADF/KPSS and ACF/PACF results | Planned |
-| `GET /api/models` | Model comparison and diagnostics | Planned |
-| `GET /api/forecast` | Forecast and uncertainty intervals | Planned |
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/health` | API process health (does not guarantee report availability) |
+| `GET /api/summary` | Compact EDA and evaluation summary |
+| `GET /api/series/hourly`, `GET /api/series/daily` | Recent cleaned observations; bounded `limit` parameter |
+| `GET /api/eda` | EDA summary and profile tables |
+| `GET /api/decomposition/hourly`, `GET /api/decomposition/daily` | Saved observed/trend/seasonal/residual components |
+| `GET /api/models/hourly`, `GET /api/models/daily` | Model metrics and residual diagnostics |
+| `GET /api/forecast/{series}?model=...&limit=...` | Saved chronological holdout predictions, not a new future forecast |
+| `GET /api/correlation/hourly`, `GET /api/correlation/daily` | Saved Pearson/Spearman correlation results |
 
 ## Project structure
 ```text
@@ -552,6 +552,7 @@ WattCast/
 │   │   ├── statistical_models/  # Generated model forecasts (outputs ignored by Git)
 │   │   ├── ml_forecasting/      # Generated ML forecasts (outputs ignored by Git)
 │   │   ├── evaluation/          # Generated evaluation metrics/cache/residual plots (outputs ignored by Git)
+│   │   ├── correlation/         # Generated Pearson/Spearman reports and heatmaps (outputs ignored by Git)
 │   │   └── time_series/         # Generated diagnostics (outputs ignored by Git)
 │   ├── models/
 │   ├── notebooks/
@@ -584,8 +585,8 @@ WattCast/
 └── .gitignore
 ```
 
-## Screenshots
-No application screenshots yet. They will be added after the UI is implemented and run successfully.
+## Final documentation
+- `docs/VIVA_PREP.md` contains the architecture walkthrough, data and algorithm explanations, API map, demo sequence, 42 viva questions with answers, limitations and final preparation checklist.
 
 ## Limitations and future work
 - Forecast quality depends on data quality and the selected test period.
@@ -635,7 +636,7 @@ A: Grouping observations by hour-of-day or day-of-week can reveal recurring dail
 
 ## Step 11: React frontend foundation
 
-The frontend lives in `frontend/` and uses React, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide icons and Recharts. This step creates the app shell and API integration foundation; the data explorer, decomposition visualisations, model comparison and forecast experience are built in Steps 12–14.
+The frontend lives in `frontend/` and uses React, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide icons and Recharts. This step creates the app shell and API integration foundation. The completed dashboard now includes data exploration, correlation, decomposition, model comparison and holdout forecast inspection.
 
 ### Start the frontend
 
@@ -674,7 +675,7 @@ The value is the API origin, without an `/api` suffix. Vite reads environment va
 
 ### API and data integrity
 
-The frontend reads its API base URL from `VITE_API_BASE_URL`, falling back to `http://127.0.0.1:8000`. The current screen checks API health only. It does not yet load summary metrics or chart data. Steps 12–14 will connect those screens to the existing FastAPI endpoints and use the saved analysis artifacts.
+The frontend reads its API base URL from `VITE_API_BASE_URL`, falling back to `http://127.0.0.1:8000`. Dashboard pages call the existing FastAPI endpoints and render saved analysis artifacts. The API serves precomputed outputs; it does not train models in response to browser requests.
 
 ### Step 11 local verification checklist
 
@@ -787,7 +788,7 @@ npm run dev
 
 Check Model lab with both frequencies and all three metrics. Check Forecasts with both frequencies and several model selections. Confirm that charts update, loading/error states behave correctly, and the page describes the data as holdout predictions rather than future forecasts.
 
-**Verification status:** Implementation committed. Awaiting the user's local TypeScript/Vite build and browser verification.
+**Verification status:** The user confirmed the Model Lab and Forecasts pages work in the browser after the local build.
 
 
 ## Step 15: Full dashboard integration and polish
@@ -840,7 +841,7 @@ Browser checklist:
 5. Confirm the other five pages still load and their controls still update.
 6. Stop the backend temporarily and confirm the API-offline/error state is understandable; restart it afterward.
 
-**Verification status:** Step 15 implementation committed. Awaiting local production-build and browser verification.
+**Verification status:** The user confirmed the Decomposition page, all six dashboard sections, responsive navigation and theme switching work in the browser.
 
 
 ### Step 15 follow-up: native dropdown contrast
@@ -860,3 +861,27 @@ npm run build
 ```
 
 Then open Model lab, hover each bar in both light and dark themes, and confirm the tooltip model name and metric are readable.
+
+## Step 16: Final documentation, report and viva preparation
+
+The final technical/viva guide is available at [docs/VIVA_PREP.md](docs/VIVA_PREP.md). It documents the implemented architecture, dataset provenance, preprocessing decisions, EDA, decomposition and stationarity diagnostics, forecasting candidates, evaluation metrics, residual analysis, caching, correlation, API endpoints, frontend structure, demo sequence, limitations and viva questions.
+
+The repository audit also:
+- Replaced the obsolete planned-API table with the implemented read-only API routes.
+- Corrected stale Step 11/14/15 descriptions and verification status.
+- Added the generated correlation report directory to `.gitignore` so local report artifacts are not accidentally committed.
+- Kept the project limitation explicit: the Forecasts page displays saved holdout predictions and does not generate new future forecasts.
+
+### Final verification commands
+
+From the repository root:
+
+```powershell
+python -m pytest backend/tests -q
+cd frontend
+npm run build
+```
+
+Then inspect the Git working tree and confirm generated datasets, reports, `node_modules/` and `frontend/dist/` are not staged unintentionally. Record the actual local test/build results before presenting; this documentation commit does not itself prove the local environment passes.
+
+**Verification status:** Documentation and repository-audit changes are committed. Final local backend test and frontend build confirmation remains with the user.
