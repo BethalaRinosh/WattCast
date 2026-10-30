@@ -71,7 +71,9 @@ def correlation_payload(frame: pd.DataFrame, series: str, source_type: str) -> d
     numeric = frame.select_dtypes(include=[np.number]).replace([np.inf, -np.inf], np.nan)
     available = [column for column in numeric.columns if numeric[column].notna().sum() >= 3
                  and numeric[column].nunique(dropna=True) > 1]
-    if TARGET not in available:
+    # A one-column matrix only correlates the target with itself, which is
+    # not meaningful cross-variable correlation analysis.
+    if TARGET not in available or len(available) < 2:
         return {
             "series": series, "source_type": source_type, "available": False,
             "message": "Correlation analysis requires at least one non-constant numeric measurement alongside active power.",
