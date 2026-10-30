@@ -38,17 +38,52 @@ export interface ModelMetrics {
   mape?: number;
 }
 
+
+export interface ResidualDiagnostics {
+  mean_error_kw?: number;
+  median_error_kw?: number;
+  residual_std_kw?: number;
+  mean_absolute_error_kw?: number;
+  max_absolute_error_kw?: number;
+  lag_1_residual_autocorrelation?: number | null;
+  fraction_within_two_residual_std?: number;
+  interpretation_note?: string;
+}
+
 export interface EvaluatedModel {
   status?: string;
   metrics?: ModelMetrics;
+  residual_diagnostics?: ResidualDiagnostics;
   evaluated_timestamps?: number;
+  evaluation_start?: string;
+  evaluation_end?: string;
 }
 
 export interface SeriesEvaluation {
+  series?: "hourly" | "daily";
   best_by_mae?: string;
   best_by_rmse?: string;
   evaluation_observations?: number;
+  ranking_by_mae_then_rmse?: Array<{ model: string; mae: number; rmse: number }>;
   models?: Record<string, EvaluatedModel>;
+}
+
+export interface ModelComparisonResponse extends SeriesEvaluation {
+  series: "hourly" | "daily";
+}
+
+export interface ForecastPoint {
+  timestamp: string;
+  actual_kw: number;
+  predicted_kw: number;
+}
+
+export interface ForecastResponse {
+  series: "hourly" | "daily";
+  model: string;
+  count: number;
+  points: ForecastPoint[];
+  note: string;
 }
 
 export interface SummaryResponse {
@@ -158,4 +193,22 @@ export function getCorrelation(
   signal?: AbortSignal,
 ): Promise<CorrelationResponse> {
   return apiGet<CorrelationResponse>(`/api/correlation/${series}`, signal);
+}
+
+export function getModels(
+  series: "hourly" | "daily",
+  signal?: AbortSignal,
+): Promise<ModelComparisonResponse> {
+  return apiGet<ModelComparisonResponse>(`/api/models/${series}`, signal);
+}
+
+export function getForecast(
+  series: "hourly" | "daily",
+  model: string,
+  limit = 500,
+  signal?: AbortSignal,
+): Promise<ForecastResponse> {
+  const safeLimit = Math.min(2000, Math.max(1, Math.floor(limit)));
+  const params = new URLSearchParams({ model, limit: String(safeLimit) });
+  return apiGet<ForecastResponse>(`/api/forecast/${series}?${params.toString()}`, signal);
 }
