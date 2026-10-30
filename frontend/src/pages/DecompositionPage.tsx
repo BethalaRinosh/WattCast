@@ -86,7 +86,7 @@ export default function DecompositionPage() {
               const validCount = chartData.filter((point) => typeof point[component.key] === "number").length;
               return <section className="surface-card min-w-0" key={component.key}>
                 <div className="mb-4 flex flex-wrap items-start justify-between gap-2"><div><p className="eyebrow">{component.title}</p><p className="mt-2 text-xs leading-5 text-ink/45 dark:text-white/40">{component.description}</p></div><ChartZoomControls isZoomed={zoom.isZoomed} onReset={zoom.resetZoom} /></div>
-                {validCount ? <div className="h-[250px] w-full" onWheel={zoom.handleWheel}>
+                {validCount ? <div className="h-[250px] w-full" ref={zoom.containerRef} style={{ overscrollBehavior: "contain" }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
