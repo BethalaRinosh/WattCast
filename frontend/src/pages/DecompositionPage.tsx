@@ -49,7 +49,7 @@ export default function DecompositionPage() {
     chartIndex,
     chartTime: formatTimestamp(point.timestamp, frequency),
   })), [data, frequency]);
-  const zoom = useChartZoom(chartData.length);
+  const zoom = useChartZoom(chartData.length, frequency);
 
   return (
     <div className="space-y-5">
