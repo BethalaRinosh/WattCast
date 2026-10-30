@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { ApiError, getSeries, type SeriesResponse } from "../api/client";
 import { EmptyState, ErrorState, LoadingState } from "./OverviewPage";
+import { ChartZoomControls, useChartZoom } from "../components/ChartZoom";
 
 type Frequency = "hourly" | "daily";
 
@@ -49,12 +50,14 @@ export default function DataExplorerPage() {
   }, [frequency, limit]);
 
   const points = result?.points ?? [];
-  const chartData = points.map((point) => ({
+  const chartData = points.map((point, chartIndex) => ({
     ...point,
+    chartIndex,
     chartTime: new Date(point.timestamp).toLocaleString(undefined, frequency === "hourly"
       ? { month: "short", day: "numeric", hour: "2-digit" }
       : { month: "short", day: "numeric", year: "2-digit" }),
   }));
+  const zoom = useChartZoom(chartData.length);
   const recentRows = [...points].reverse().slice(0, 20);
   const values = points.map((point) => point.active_power_kw).filter(Number.isFinite);
   const mean = values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
@@ -119,15 +122,15 @@ export default function DataExplorerPage() {
           </div>
 
           <section className="surface-card">
-            <div className="mb-5 flex items-center justify-between gap-3">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div><p className="eyebrow">Time-series view</p><h2 className="mt-2 text-lg font-semibold tracking-tight">{frequency === "hourly" ? "Hourly" : "Daily"} mean active power</h2></div>
-              <Rows3 size={18} className="text-ink/40 dark:text-white/40" />
+              <div className="flex items-center gap-3"><ChartZoomControls isZoomed={zoom.isZoomed} onReset={zoom.resetZoom} /><Rows3 size={18} className="text-ink/40 dark:text-white/40" /></div>
             </div>
-            {chartData.length ? <div className="h-[320px] w-full">
+            {chartData.length ? <div className="h-[320px] w-full" onWheel={zoom.handleWheel}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
-                  <XAxis dataKey="chartTime" minTickGap={35} tick={{ fontSize: 11 }} stroke="currentColor" opacity={0.55} />
+                  <XAxis dataKey="chartIndex" type="number" domain={zoom.domain} allowDataOverflow tickFormatter={(value: number) => chartData[Math.round(value)]?.chartTime ?? ""} minTickGap={35} tick={{ fontSize: 11 }} stroke="currentColor" opacity={0.55} />
                   <YAxis width={58} tick={{ fontSize: 11 }} stroke="currentColor" opacity={0.55} tickFormatter={(value: number) => value.toFixed(1)} />
                   <Tooltip
                     contentStyle={{ borderRadius: 12, border: "1px solid #8884" }}
