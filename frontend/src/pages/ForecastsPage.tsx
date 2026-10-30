@@ -52,7 +52,7 @@ export default function ForecastsPage() {
     chartIndex,
     chartTime: timestampLabel(point.timestamp, frequency),
   })), [points, frequency]);
-  const zoom = useChartZoom(chartData.length);
+  const zoom = useChartZoom(chartData.length, `${frequency}-${model}-${limit}`);
   const mae = points.length ? points.reduce((sum, point) => sum + Math.abs(point.actual_kw - point.predicted_kw), 0) / points.length : null;
   const rmse = points.length ? Math.sqrt(points.reduce((sum, point) => sum + (point.actual_kw - point.predicted_kw) ** 2, 0) / points.length) : null;
 
