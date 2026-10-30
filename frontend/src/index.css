@@ -84,3 +84,25 @@ button:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* Keep native select menus readable in both color schemes. */
+select {
+  color-scheme: light;
+}
+
+.dark select {
+  color-scheme: dark;
+}
+
+select option,
+select optgroup {
+  background-color: #ffffff;
+  color: #202a20;
+}
+
+.dark select option,
+.dark select optgroup {
+  background-color: #182019;
+  color: #edf1e8;
+}
