@@ -109,7 +109,7 @@ export default function OverviewPage() {
           </div>
         </div>
         {chartData.length ? (
-          <div className="h-[300px] w-full" onWheel={zoom.handleWheel}>
+          <div className="h-[300px] w-full" ref={zoom.containerRef} style={{ overscrollBehavior: "contain" }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
