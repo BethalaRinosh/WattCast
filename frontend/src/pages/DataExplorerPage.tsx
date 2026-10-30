@@ -126,7 +126,7 @@ export default function DataExplorerPage() {
               <div><p className="eyebrow">Time-series view</p><h2 className="mt-2 text-lg font-semibold tracking-tight">{frequency === "hourly" ? "Hourly" : "Daily"} mean active power</h2></div>
               <div className="flex items-center gap-3"><ChartZoomControls isZoomed={zoom.isZoomed} onReset={zoom.resetZoom} /><Rows3 size={18} className="text-ink/40 dark:text-white/40" /></div>
             </div>
-            {chartData.length ? <div className="h-[320px] w-full" onWheel={zoom.handleWheel}>
+            {chartData.length ? <div className="h-[320px] w-full" ref={zoom.containerRef} style={{ overscrollBehavior: "contain" }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
