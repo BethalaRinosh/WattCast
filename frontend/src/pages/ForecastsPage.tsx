@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ApiError, getForecast, type ForecastResponse } from "../api/client";
 import { ErrorState, LoadingState } from "./OverviewPage";
+import { ChartZoomControls, useChartZoom } from "../components/ChartZoom";
 
 type Frequency = "hourly" | "daily";
 const MODELS = [
@@ -46,10 +47,12 @@ export default function ForecastsPage() {
   }, [frequency, model, limit]);
 
   const points = result?.points ?? [];
-  const chartData = useMemo(() => points.map((point) => ({
+  const chartData = useMemo(() => points.map((point, chartIndex) => ({
     ...point,
+    chartIndex,
     chartTime: timestampLabel(point.timestamp, frequency),
   })), [points, frequency]);
+  const zoom = useChartZoom(chartData.length);
   const mae = points.length ? points.reduce((sum, point) => sum + Math.abs(point.actual_kw - point.predicted_kw), 0) / points.length : null;
   const rmse = points.length ? Math.sqrt(points.reduce((sum, point) => sum + (point.actual_kw - point.predicted_kw) ** 2, 0) / points.length) : null;
 
@@ -80,12 +83,12 @@ export default function ForecastsPage() {
             <Stat label="RMSE in selected window" value={rmse === null ? "N/A" : `${rmse.toFixed(4)} kW`} />
           </div>
           <section className="surface-card">
-            <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="eyebrow">Chronological holdout</p><h3 className="mt-2 text-lg font-semibold">Observed and modelled values</h3></div><span className="text-xs text-ink/40">{frequency} · {model.replace(/_/g, " ")}</span></div>
-            {chartData.length ? <div className="h-[360px] w-full">
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="eyebrow">Chronological holdout</p><h3 className="mt-2 text-lg font-semibold">Observed and modelled values</h3><div className="mt-2"><ChartZoomControls isZoomed={zoom.isZoomed} onReset={zoom.resetZoom} /></div></div><span className="text-xs text-ink/40">{frequency} · {model.replace(/_/g, " ")}</span></div>
+            {chartData.length ? <div className="h-[360px] w-full" onWheel={zoom.handleWheel}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 4, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
-                  <XAxis dataKey="chartTime" minTickGap={35} tick={{ fontSize: 11 }} stroke="currentColor" opacity={0.55} />
+                  <XAxis dataKey="chartIndex" type="number" domain={zoom.domain} allowDataOverflow tickFormatter={(value: number) => chartData[Math.round(value)]?.chartTime ?? ""} minTickGap={35} tick={{ fontSize: 11 }} stroke="currentColor" opacity={0.55} />
                   <YAxis width={62} tick={{ fontSize: 11 }} stroke="currentColor" opacity={0.55} tickFormatter={(value: number) => value.toFixed(1)} />
                   <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #8884" }} formatter={(value) => [typeof value === "number" ? `${value.toFixed(3)} kW` : value]} labelFormatter={(_, payload) => payload?.[0]?.payload?.timestamp ? new Date(payload[0].payload.timestamp).toLocaleString() : ""} />
                   <Legend />
