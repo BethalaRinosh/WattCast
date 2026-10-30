@@ -145,7 +145,3 @@ function ConnectionPill({ state }: { state: ConnectionState }) {
   const dot = state === "connected" ? "bg-emerald-500" : state === "error" ? "bg-rose-500" : "animate-pulse bg-amber-400";
   return <div className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white/50 px-3 py-2 text-[11px] font-medium text-ink/60 dark:border-white/[0.09] dark:bg-white/[0.035] dark:text-white/60"><span className={`h-1.5 w-1.5 rounded-full ${dot}`} /><span className="hidden sm:inline">{label}</span><span className="sm:hidden">{state === "connected" ? "Online" : state === "error" ? "Offline" : "Wait…"}</span></div>;
 }
-
-function ComingSoonPage({ page }: { page: string }) {
-  return <section className="surface-card"><p className="eyebrow">Planned next</p><h2 className="mt-2 text-xl font-semibold">{page} is not implemented yet</h2><p className="mt-3 max-w-xl text-sm leading-6 text-ink/55 dark:text-white/50">This navigation entry is reserved for a later project step. The current build implements the Overview and Data explorer views using real API responses.</p></section>;
-}
