@@ -271,7 +271,7 @@ def get_saved_forecast(
     return ForecastResponse(series=series, model=model, count=len(points), points=points)
 
 @app.get("/api/correlation/{series}", tags=["analysis"])
-def get_correlation(series: SeriesName) -> dict[str, Any]:
+def get_correlation(series: str) -> dict[str, Any]:
     """Return saved Pearson and Spearman correlation analysis for a frequency."""
     series = _valid_series(series)
     result = _json_artifact(REPORTS_DIR / "correlation" / "correlation_results.json")
