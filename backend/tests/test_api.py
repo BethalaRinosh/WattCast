@@ -114,3 +114,40 @@ def test_decomposition_uses_residual_column_name(tmp_path, monkeypatch):
     assert response.status_code == 200
     assert response.json()["count"] == 2
     assert response.json()["points"][1]["residual"] == 0.6
+
+def test_correlation_endpoint_returns_saved_series_result(tmp_path, monkeypatch):
+    reports = tmp_path / "reports"
+    folder = reports / "correlation"
+    folder.mkdir(parents=True)
+    (folder / "correlation_results.json").write_text(json.dumps({
+        "project": "WattCast",
+        "source_type": "real",
+        "source_label": "REAL UCI DATA",
+        "variables_note": "Original UCI variables.",
+        "series": {
+            "hourly": {
+                "series": "hourly",
+                "available": True,
+                "observations": 120,
+                "variables": ["active_power_kw", "voltage_v"],
+                "pearson": {"active_power_kw": {"active_power_kw": 1.0, "voltage_v": 0.2}},
+                "spearman": {"active_power_kw": {"active_power_kw": 1.0, "voltage_v": 0.1}},
+                "target_ranking": [],
+            }
+        },
+    }), encoding="utf-8")
+    monkeypatch.setattr(api, "REPORTS_DIR", reports)
+
+    response = client.get("/api/correlation/hourly")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["available"] is True
+    assert body["source_type"] == "real"
+    assert body["pearson"]["active_power_kw"]["voltage_v"] == 0.2
+
+
+def test_correlation_rejects_invalid_frequency():
+    response = client.get("/api/correlation/weekly")
+    assert response.status_code == 422
+    assert response.json()["detail"]["code"] == "invalid_series"
