@@ -269,3 +269,22 @@ def get_saved_forecast(
             detail={"code": "forecast_not_found", "message": f"No valid saved predictions found for {series}/{model}."},
         )
     return ForecastResponse(series=series, model=model, count=len(points), points=points)
+
+@app.get("/api/correlation/{series}", tags=["analysis"])
+def get_correlation(series: SeriesName) -> dict[str, Any]:
+    """Return saved Pearson and Spearman correlation analysis for a frequency."""
+    series = _valid_series(series)
+    result = _json_artifact(REPORTS_DIR / "correlation" / "correlation_results.json")
+    series_result = result.get("series", {}).get(series)
+    if not isinstance(series_result, dict):
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "correlation_not_found", "message": f"No correlation result exists for {series}. Run scripts/correlation_analysis.py first."},
+        )
+    return {
+        "project": result.get("project", "WattCast"),
+        "source_type": result.get("source_type", "unknown"),
+        "source_label": result.get("source_label", "UNKNOWN SOURCE"),
+        "variables_note": result.get("variables_note"),
+        **series_result,
+    }
