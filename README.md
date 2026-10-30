@@ -4,7 +4,7 @@
 
 WattCast is an academic micro project for the Data Science 3rd Internal Assessment. It analyses historical electricity consumption and compares time-series and machine-learning forecasting methods through a web dashboard.
 
-> **Project status:** Steps 1–10 are verified locally. Step 9 was confirmed on real UCI data with 7 focused evaluation tests and 57 passing backend tests. Step 10's API tests passed 8/8 and the complete backend suite passed 65/65; Uvicorn started successfully and `/api/health`, `/docs`, and `/openapi.json` returned HTTP 200. Step 11's React/Vite frontend scaffold, production build and browser/API behavior were verified locally by the user. Step 12's API-backed Overview and Data explorer pages are committed; local build and data-view verification are pending. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
+> **Project status:** Steps 1–10 are verified locally. Step 9 was confirmed on real UCI data with 7 focused evaluation tests and 57 passing backend tests. Step 10's API tests passed 8/8 and the complete backend suite passed 65/65; Uvicorn started successfully and `/api/health`, `/docs`, and `/openapi.json` returned HTTP 200. Step 11's React/Vite frontend scaffold, production build and browser/API behavior were verified locally by the user. Step 12's API-backed Overview and Data explorer pages were verified locally by the user against the real UCI dataset. Step 13 correlation pipeline, API endpoint, tests and dashboard page are implemented in the repository; local execution and verification are pending. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
 
 ## Problem statement
 Electricity consumption changes over time due to recurring daily and weekly routines, longer-term trends, and random variation. WattCast aims to explore these patterns and compare forecasting approaches using a chronological test set.
@@ -706,3 +706,40 @@ npm run build
 ```
 
 The user confirmed the local production build completed successfully after the CSS fix and then confirmed the browser/API, offline-state, theme and mobile-navigation checks passed.
+
+
+## Step 13: Correlation analysis
+
+Run after the real UCI dataset has been downloaded:
+
+```powershell
+python scripts/correlation_analysis.py
+```
+
+The pipeline re-reads the original UCI file so it can retain all seven numerical measurements without changing the single-target forecasting contract used by earlier steps. It renames the fields to readable WattCast names, parses numeric values, removes invalid timestamps and duplicate timestamps, resamples every measurement to hourly and daily means, and calculates pairwise Pearson and Spearman correlation matrices.
+
+Preserved measurements:
+- `Global_active_power` → `active_power_kw` (forecast target)
+- `Global_reactive_power` → `reactive_power_kvar`
+- `Voltage` → `voltage_v`
+- `Global_intensity` → `global_intensity_a`
+- `Sub_metering_1`, `Sub_metering_2`, `Sub_metering_3` → corresponding `sub_metering_*_wh` fields
+
+Outputs in `backend/reports/correlation/`:
+- `correlation_results.json`: source-labelled hourly and daily matrices, target rankings, observation counts and interpretation notes.
+- `hourly_pearson_heatmap.png`, `hourly_spearman_heatmap.png`
+- `daily_pearson_heatmap.png`, `daily_spearman_heatmap.png`
+
+The API exposes results through `GET /api/correlation/hourly` and `GET /api/correlation/daily`. The React dashboard adds a Correlation analysis page with hourly/daily selection, Pearson/Spearman switching and a target-focused ranking table.
+
+**Synthetic-data limitation:** The current synthetic generator contains only active power. The pipeline reports correlation as unavailable for that source rather than fabricating variables. At least two non-constant numeric variables are needed for cross-variable correlation.
+
+**Interpretation:** Pearson measures linear association; Spearman measures monotonic rank association. Neither establishes causation. Hourly and daily aggregation can produce different coefficients. Missing feature values are handled pairwise without imputation.
+
+Run the focused tests and full backend suite:
+
+```powershell
+python -m pytest backend/tests/test_correlation_analysis.py -q
+python -m pytest backend/tests/test_api.py -q
+python -m pytest backend/tests -q
+```
