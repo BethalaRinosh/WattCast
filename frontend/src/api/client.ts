@@ -128,3 +128,34 @@ export function getSeries(
   const safeLimit = Math.min(2000, Math.max(1, Math.floor(limit)));
   return apiGet<SeriesResponse>(`/api/series/${series}?limit=${safeLimit}`, signal);
 }
+
+export interface CorrelationVariable {
+  variable: string;
+  pearson: number | null;
+  spearman: number | null;
+  paired_observations: number;
+}
+
+export interface CorrelationResponse {
+  project: string;
+  source_type: "real" | "synthetic" | "unknown";
+  source_label: string;
+  variables_note?: string;
+  series: "hourly" | "daily";
+  available: boolean;
+  message?: string;
+  method?: string;
+  observations: number;
+  variables: string[];
+  pearson?: Record<string, Record<string, number | null>>;
+  spearman?: Record<string, Record<string, number | null>>;
+  target_ranking?: CorrelationVariable[];
+  interpretation?: string;
+}
+
+export function getCorrelation(
+  series: "hourly" | "daily",
+  signal?: AbortSignal,
+): Promise<CorrelationResponse> {
+  return apiGet<CorrelationResponse>(`/api/correlation/${series}`, signal);
+}
