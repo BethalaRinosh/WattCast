@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ApiError, CorrelationResponse, getCorrelation } from "../api/client";
+import { ApiError, getCorrelation, type CorrelationResponse } from "../api/client";
 
 type Frequency = "hourly" | "daily";
 type Method = "pearson" | "spearman";
@@ -58,8 +58,8 @@ export default function CorrelationPage() {
             <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="eyebrow">{method} correlation</p><h3 className="mt-2 text-lg font-semibold">Measurement matrix</h3></div><span className="text-xs text-ink/40 dark:text-white/40">Scale: −1 to +1</span></div>
             <div className="overflow-x-auto">
               <table className="min-w-[620px] border-separate border-spacing-1 text-center text-xs">
-                <thead><tr><th className="p-2" />{variables.map((name) => <th key={name} className="max-w-28 px-2 py-2 font-medium text-ink/55 dark:text-white/55">{name.replaceAll("_", " ")}</th>)}</tr></thead>
-                <tbody>{variables.map((row) => <tr key={row}><th className="max-w-32 px-2 text-left font-medium text-ink/55 dark:text-white/55">{row.replaceAll("_", " ")}</th>{variables.map((column) => {
+                <thead><tr><th className="p-2" />{variables.map((name) => <th key={name} className="max-w-28 px-2 py-2 font-medium text-ink/55 dark:text-white/55">{name.replace(/_/g, " ")}</th>)}</tr></thead>
+                <tbody>{variables.map((row) => <tr key={row}><th className="max-w-32 px-2 text-left font-medium text-ink/55 dark:text-white/55">{row.replace(/_/g, " ")}</th>{variables.map((column) => {
                   const value = matrix[row]?.[column] ?? null;
                   const alpha = value === null ? 0 : 0.12 + Math.abs(value) * 0.72;
                   const background = value === null ? "transparent" : value >= 0 ? `rgba(132, 190, 75, ${alpha})` : `rgba(220, 112, 105, ${alpha})`;
@@ -71,7 +71,7 @@ export default function CorrelationPage() {
           </section>
           <section className="surface-card">
             <p className="eyebrow">Target relationship</p><h3 className="mt-2 text-lg font-semibold">Variables associated with active power</h3>
-            {ranking.length ? <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[460px] text-left text-sm"><thead><tr className="border-b border-black/[0.08] text-xs text-ink/45 dark:border-white/[0.1] dark:text-white/40"><th className="py-3 pr-3 font-medium">Variable</th><th className="py-3 text-right font-medium">Pearson</th><th className="py-3 text-right font-medium">Spearman</th><th className="py-3 text-right font-medium">Paired rows</th></tr></thead><tbody>{ranking.map((item) => <tr key={item.variable} className="border-b border-black/[0.05] last:border-0 dark:border-white/[0.06]"><td className="py-3 pr-3">{item.variable.replaceAll("_", " ")}</td><td className="py-3 text-right font-mono">{item.pearson?.toFixed(3) ?? "N/A"}</td><td className="py-3 text-right font-mono">{item.spearman?.toFixed(3) ?? "N/A"}</td><td className="py-3 text-right font-mono">{item.paired_observations.toLocaleString()}</td></tr>)}</tbody></table></div> : <p className="mt-3 text-sm text-ink/50">No additional numeric variables are available.</p>}
+            {ranking.length ? <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[460px] text-left text-sm"><thead><tr className="border-b border-black/[0.08] text-xs text-ink/45 dark:border-white/[0.1] dark:text-white/40"><th className="py-3 pr-3 font-medium">Variable</th><th className="py-3 text-right font-medium">Pearson</th><th className="py-3 text-right font-medium">Spearman</th><th className="py-3 text-right font-medium">Paired rows</th></tr></thead><tbody>{ranking.map((item) => <tr key={item.variable} className="border-b border-black/[0.05] last:border-0 dark:border-white/[0.06]"><td className="py-3 pr-3">{item.variable.replace(/_/g, " ")}</td><td className="py-3 text-right font-mono">{item.pearson?.toFixed(3) ?? "N/A"}</td><td className="py-3 text-right font-mono">{item.spearman?.toFixed(3) ?? "N/A"}</td><td className="py-3 text-right font-mono">{item.paired_observations.toLocaleString()}</td></tr>)}</tbody></table></div> : <p className="mt-3 text-sm text-ink/50">No additional numeric variables are available.</p>}
           </section>
           <p className="px-1 text-xs leading-5 text-ink/45 dark:text-white/40">{data.interpretation} Correlation strength does not establish causation, and results can change with aggregation frequency.</p>
         </>}
