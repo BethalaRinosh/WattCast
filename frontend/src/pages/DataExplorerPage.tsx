@@ -57,7 +57,7 @@ export default function DataExplorerPage() {
       ? { month: "short", day: "numeric", hour: "2-digit" }
       : { month: "short", day: "numeric", year: "2-digit" }),
   }));
-  const zoom = useChartZoom(chartData.length);
+  const zoom = useChartZoom(chartData.length, `${frequency}-${limit}`);
   const recentRows = [...points].reverse().slice(0, 20);
   const values = points.map((point) => point.active_power_kw).filter(Number.isFinite);
   const mean = values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
