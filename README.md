@@ -4,7 +4,7 @@
 
 WattCast is an academic micro project for the Data Science 3rd Internal Assessment. It analyses historical electricity consumption and compares time-series and machine-learning forecasting methods through a web dashboard.
 
-> **Project status:** Steps 1–10 are verified locally. Step 9 was confirmed on real UCI data with 7 focused evaluation tests and 57 passing backend tests. Step 10's API tests passed 8/8 and the complete backend suite passed 65/65; Uvicorn started successfully and `/api/health`, `/docs`, and `/openapi.json` returned HTTP 200. Step 11's React/Vite frontend scaffold, production build and browser/API behavior were verified locally by the user. Step 12's API-backed Overview and Data explorer pages were verified locally by the user against the real UCI dataset. Step 13 correlation pipeline, API endpoint, tests and dashboard page are implemented in the repository; local execution and verification are pending. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
+> **Project status:** Steps 1–13 are locally verified. Step 13 correlation analysis passed its focused tests (4/4), API tests (10/10) and full backend suite (71/71); the real UCI pipeline produced hourly and daily reports across all seven numeric measurements. The frontend correlation page was also confirmed working in the browser. Step 14 model-comparison and forecast dashboard pages are implemented; local production-build and browser verification are pending. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
 
 ## Problem statement
 Electricity consumption changes over time due to recurring daily and weekly routines, longer-term trends, and random variation. WattCast aims to explore these patterns and compare forecasting approaches using a chronological test set.
@@ -743,3 +743,48 @@ python -m pytest backend/tests/test_correlation_analysis.py -q
 python -m pytest backend/tests/test_api.py -q
 python -m pytest backend/tests -q
 ```
+
+## Step 14: Model comparison and forecast dashboard
+
+Step 14 connects the existing model-evaluation and saved holdout-forecast API endpoints to two interactive dashboard pages. It does not retrain models in the browser or generate synthetic scores.
+
+### Model lab
+
+- Calls GET /api/models/hourly or GET /api/models/daily.
+- Compares the six saved candidates: naive, seasonal naive, Holt-Winters, ARIMA(1,1,1), SARIMA and Random Forest.
+- Switches between MAE, RMSE and MAPE; lower error is better.
+- Displays the best model by the selected MAE/RMSE criterion, a ranked chart and a detailed metrics table.
+- Shows the shared evaluation observation count and only includes successful model results.
+
+### Forecast inspection
+
+- Calls GET /api/forecast/{series}?model={model}&limit={limit}.
+- Supports hourly/daily series, all six model choices and a bounded holdout window (100–2,000 points).
+- Plots actual versus predicted active power and shows selected-window MAE/RMSE plus a sample of the latest returned rows.
+- Explicitly labels these as saved chronological holdout predictions, not forecasts beyond the observed dataset.
+
+### Verify Step 14
+
+From the repository root:
+
+```powershell
+git pull origin main
+cd frontend
+npm run build
+```
+
+Then run the backend from the repository root in one terminal:
+
+```powershell
+python -m uvicorn backend.app.main:app --reload
+```
+
+Run the frontend from frontend/ in another terminal:
+
+```powershell
+npm run dev
+```
+
+Check Model lab with both frequencies and all three metrics. Check Forecasts with both frequencies and several model selections. Confirm that charts update, loading/error states behave correctly, and the page describes the data as holdout predictions rather than future forecasts.
+
+**Verification status:** Implementation committed. Awaiting the user's local TypeScript/Vite build and browser verification.
