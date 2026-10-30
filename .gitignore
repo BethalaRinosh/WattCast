@@ -24,6 +24,8 @@ backend/reports/ml_forecasting/*
 !backend/reports/ml_forecasting/.gitkeep
 backend/reports/evaluation/*
 !backend/reports/evaluation/.gitkeep
+backend/reports/correlation/*
+!backend/reports/correlation/.gitkeep
 backend/models/*
 !backend/models/.gitkeep
 reports/figures/*
