@@ -19,6 +19,8 @@ import { ApiError, getHealth } from "./api/client";
 import OverviewPage from "./pages/OverviewPage";
 import DataExplorerPage from "./pages/DataExplorerPage";
 import CorrelationPage from "./pages/CorrelationPage";
+import ModelLabPage from "./pages/ModelLabPage";
+import ForecastsPage from "./pages/ForecastsPage";
 
 const navigation = [
   { label: "Overview", icon: LayoutDashboard, description: "A clear view of your energy data." },
@@ -113,7 +115,7 @@ export default function App() {
 
                 {connectionState === "error" && <div className="mb-6 rounded-2xl border border-rose-500/25 bg-rose-500/[0.06] p-5 sm:p-6" role="alert"><h2 className="font-medium">The API is not reachable</h2><p className="mt-2 break-words text-sm leading-6 text-ink/60 dark:text-white/55">{apiError}</p><p className="mt-2 text-xs text-ink/45 dark:text-white/40">Start FastAPI from the repository root, or update <code className="font-mono">VITE_API_BASE_URL</code> in <code className="font-mono">frontend/.env</code>.</p></div>}
 
-                {activePage === "Overview" ? <OverviewPage /> : activePage === "Data explorer" ? <DataExplorerPage /> : activePage === "Correlation analysis" ? <CorrelationPage /> : <ComingSoonPage page={activePage} />}
+                {activePage === "Overview" ? <OverviewPage /> : activePage === "Data explorer" ? <DataExplorerPage /> : activePage === "Correlation analysis" ? <CorrelationPage /> : activePage === "Model lab" ? <ModelLabPage /> : activePage === "Forecasts" ? <ForecastsPage /> : <ComingSoonPage page={activePage} />}
 
                 <div className="mt-8 flex flex-col gap-2 border-t border-black/[0.07] pt-5 text-xs text-ink/40 dark:border-white/[0.08] dark:text-white/35 sm:flex-row sm:items-center sm:justify-between">
                   <span>WattCast · Household energy time-series research</span>
