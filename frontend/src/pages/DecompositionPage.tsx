@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ApiError, getDecomposition, type DecompositionResponse } from "../api/client";
 import { EmptyState, ErrorState, LoadingState } from "./OverviewPage";
+import { ChartZoomControls, useChartZoom } from "../components/ChartZoom";
 
 type Frequency = "hourly" | "daily";
 type ComponentKey = "observed" | "trend" | "seasonal" | "residual";
@@ -43,10 +44,12 @@ export default function DecompositionPage() {
     return () => controller.abort();
   }, [frequency]);
 
-  const chartData = useMemo(() => (data?.points ?? []).map((point) => ({
+  const chartData = useMemo(() => (data?.points ?? []).map((point, chartIndex) => ({
     ...point,
+    chartIndex,
     chartTime: formatTimestamp(point.timestamp, frequency),
   })), [data, frequency]);
+  const zoom = useChartZoom(chartData.length);
 
   return (
     <div className="space-y-5">
@@ -82,12 +85,12 @@ export default function DecompositionPage() {
             {COMPONENTS.map((component) => {
               const validCount = chartData.filter((point) => typeof point[component.key] === "number").length;
               return <section className="surface-card min-w-0" key={component.key}>
-                <div className="mb-4"><p className="eyebrow">{component.title}</p><p className="mt-2 text-xs leading-5 text-ink/45 dark:text-white/40">{component.description}</p></div>
-                {validCount ? <div className="h-[250px] w-full">
+                <div className="mb-4 flex flex-wrap items-start justify-between gap-2"><div><p className="eyebrow">{component.title}</p><p className="mt-2 text-xs leading-5 text-ink/45 dark:text-white/40">{component.description}</p></div><ChartZoomControls isZoomed={zoom.isZoomed} onReset={zoom.resetZoom} /></div>
+                {validCount ? <div className="h-[250px] w-full" onWheel={zoom.handleWheel}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
-                      <XAxis dataKey="chartTime" minTickGap={32} tick={{ fontSize: 10 }} stroke="currentColor" opacity={0.5} />
+                      <XAxis dataKey="chartIndex" type="number" domain={zoom.domain} allowDataOverflow tickFormatter={(value: number) => chartData[Math.round(value)]?.chartTime ?? ""} minTickGap={32} tick={{ fontSize: 10 }} stroke="currentColor" opacity={0.5} />
                       <YAxis width={58} tick={{ fontSize: 10 }} stroke="currentColor" opacity={0.5} tickFormatter={(value: number) => value.toFixed(1)} />
                       <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #8884" }} formatter={(value) => [typeof value === "number" ? `${value.toFixed(4)} kW` : value, component.title]} labelFormatter={(_, payload) => payload?.[0]?.payload?.timestamp ? new Date(payload[0].payload.timestamp).toLocaleString() : ""} />
                       <Line type="monotone" dataKey={component.key} name={component.title} stroke="#84b82f" strokeWidth={1.7} dot={false} connectNulls={false} />
