@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useState, type WheelEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 
 type ChartZoom = {
   domain: [number, number];
-  handleWheel: (event: WheelEvent<HTMLDivElement>) => void;
+  containerRef: RefObject<HTMLDivElement>;
   resetZoom: () => void;
   isZoomed: boolean;
 };
 
 export function useChartZoom(pointCount: number, resetKey: string | number = pointCount): ChartZoom {
   const lastIndex = Math.max(0, pointCount - 1);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [domain, setDomain] = useState<[number, number]>([0, lastIndex]);
 
   useEffect(() => {
@@ -17,38 +18,50 @@ export function useChartZoom(pointCount: number, resetKey: string | number = poi
 
   const resetZoom = useCallback(() => setDomain([0, lastIndex]), [lastIndex]);
 
-  const handleWheel = useCallback((event: WheelEvent<HTMLDivElement>) => {
-    if (pointCount < 2) return;
-    event.preventDefault();
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
 
-    const [start, end] = domain;
-    const currentSpan = Math.max(1, end - start);
-    const minimumSpan = Math.min(10, lastIndex);
-    const factor = event.deltaY < 0 ? 0.8 : 1.25;
-    const nextSpan = Math.min(lastIndex, Math.max(minimumSpan, currentSpan * factor));
-    if (Math.abs(nextSpan - currentSpan) < 0.01) return;
+    // A native non-passive listener is required so the browser cannot also
+    // interpret the wheel gesture as document scrolling.
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      if (pointCount < 2) return;
 
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const pointerRatio = Math.min(1, Math.max(0, (event.clientX - bounds.left) / bounds.width));
-    const anchor = start + currentSpan * pointerRatio;
-    let nextStart = anchor - nextSpan * pointerRatio;
-    let nextEnd = nextStart + nextSpan;
+      const [start, end] = domain;
+      const currentSpan = Math.max(1, end - start);
+      const minimumSpan = Math.min(10, lastIndex);
+      const factor = event.deltaY < 0 ? 0.8 : 1.25;
+      const nextSpan = Math.min(lastIndex, Math.max(minimumSpan, currentSpan * factor));
+      if (Math.abs(nextSpan - currentSpan) < 0.01) return;
 
-    if (nextStart < 0) {
-      nextEnd -= nextStart;
-      nextStart = 0;
-    }
-    if (nextEnd > lastIndex) {
-      nextStart -= nextEnd - lastIndex;
-      nextEnd = lastIndex;
-    }
+      const bounds = element.getBoundingClientRect();
+      const pointerRatio = bounds.width > 0
+        ? Math.min(1, Math.max(0, (event.clientX - bounds.left) / bounds.width))
+        : 0.5;
+      const anchor = start + currentSpan * pointerRatio;
+      let nextStart = anchor - nextSpan * pointerRatio;
+      let nextEnd = nextStart + nextSpan;
 
-    setDomain([Math.max(0, nextStart), Math.min(lastIndex, nextEnd)]);
+      if (nextStart < 0) {
+        nextEnd -= nextStart;
+        nextStart = 0;
+      }
+      if (nextEnd > lastIndex) {
+        nextStart -= nextEnd - lastIndex;
+        nextEnd = lastIndex;
+      }
+
+      setDomain([Math.max(0, nextStart), Math.min(lastIndex, nextEnd)]);
+    };
+
+    element.addEventListener("wheel", handleWheel, { passive: false });
+    return () => element.removeEventListener("wheel", handleWheel);
   }, [domain, lastIndex, pointCount]);
 
   return {
     domain,
-    handleWheel,
+    containerRef,
     resetZoom,
     isZoomed: domain[0] > 0.5 || domain[1] < lastIndex - 0.5,
   };
