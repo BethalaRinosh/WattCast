@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { ApiError, getSeries, getSummary, type SeriesResponse, type SummaryResponse } from "../api/client";
+import { ChartZoomControls, useChartZoom } from "../components/ChartZoom";
 
 function formatKw(value: number | null | undefined): string {
   return typeof value === "number" && Number.isFinite(value) ? `${value.toFixed(3)} kW` : "Unavailable";
@@ -65,13 +66,15 @@ export default function OverviewPage() {
   const hourlyEvaluation = summary?.evaluation?.series?.hourly;
   const sourceLabel = summary?.source_label ?? "Source not specified";
 
-  if (loading) return <LoadingState label="Loading summary and recent hourly observations…" />;
-  if (error) return <ErrorState title="Overview data could not be loaded" message={error} hint="Check that the backend is running and that Steps 3, 4, and 9 have generated their saved artifacts." />;
-
-  const chartData = (series?.points ?? []).map((point) => ({
+  const chartData = (series?.points ?? []).map((point, chartIndex) => ({
     ...point,
+    chartIndex,
     chartTime: new Date(point.timestamp).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit" }),
   }));
+  const zoom = useChartZoom(chartData.length);
+
+  if (loading) return <LoadingState label="Loading summary and recent hourly observations…" />;
+  if (error) return <ErrorState title="Overview data could not be loaded" message={error} hint="Check that the backend is running and that Steps 3, 4, and 9 have generated their saved artifacts." />;
 
   return (
     <div className="space-y-5">
@@ -99,17 +102,18 @@ export default function OverviewPage() {
             <h2 className="mt-2 text-lg font-semibold tracking-tight">Hourly electricity use</h2>
             <p className="mt-1 text-sm text-ink/50 dark:text-white/45">Latest {series?.count ?? 0} observations returned by the API.</p>
           </div>
-          <div className="text-right text-xs text-ink/45 dark:text-white/40">
+          <div className="flex flex-col items-end gap-2 text-right text-xs text-ink/45 dark:text-white/40">
             <p>From {formatDate(hourly?.start)}</p>
             <p>To {formatDate(hourly?.end)}</p>
+            <ChartZoomControls isZoomed={zoom.isZoomed} onReset={zoom.resetZoom} />
           </div>
         </div>
         {chartData.length ? (
-          <div className="h-[300px] w-full">
+          <div className="h-[300px] w-full" onWheel={zoom.handleWheel}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
-                <XAxis dataKey="chartTime" minTickGap={36} tick={{ fontSize: 11 }} stroke="currentColor" opacity={0.55} />
+                <XAxis dataKey="chartIndex" type="number" domain={zoom.domain} allowDataOverflow tickFormatter={(value: number) => chartData[Math.round(value)]?.chartTime ?? ""} minTickGap={36} tick={{ fontSize: 11 }} stroke="currentColor" opacity={0.55} />
                 <YAxis width={58} tick={{ fontSize: 11 }} stroke="currentColor" opacity={0.55} tickFormatter={(value: number) => value.toFixed(1)} />
                 <Tooltip
                   contentStyle={{ borderRadius: 12, border: "1px solid #8884", background: "var(--tooltip-bg, #ffffff)" }}
