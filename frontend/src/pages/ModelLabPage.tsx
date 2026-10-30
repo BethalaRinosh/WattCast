@@ -104,7 +104,13 @@ export default function ModelLabPage() {
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="currentColor" opacity={0.1} />
                   <XAxis type="number" tick={{ fontSize: 11 }} stroke="currentColor" opacity={0.55} />
                   <YAxis type="category" dataKey="name" width={112} tick={{ fontSize: 11 }} stroke="currentColor" opacity={0.65} />
-                  <Tooltip formatter={(value) => [metricValue(Number(value), metric), METRIC_LABELS[metric]]} />
+                  <Tooltip
+                    formatter={(value) => [metricValue(Number(value), metric), METRIC_LABELS[metric]]}
+                    contentStyle={{ backgroundColor: "#182019", border: "1px solid #52604d", borderRadius: 12, color: "#f3f6ee", boxShadow: "0 12px 32px rgba(0,0,0,0.28)" }}
+                    labelStyle={{ color: "#f3f6ee", fontWeight: 600, marginBottom: 4 }}
+                    itemStyle={{ color: "#d8e8c5", fontSize: 12 }}
+                    cursor={{ fill: "rgba(132,184,47,0.12)" }}
+                  />
                   <Bar dataKey="score" fill="#84b82f" radius={[0, 6, 6, 0]} maxBarSize={28} />
                 </BarChart>
               </ResponsiveContainer>
