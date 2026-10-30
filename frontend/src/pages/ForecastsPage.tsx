@@ -84,7 +84,7 @@ export default function ForecastsPage() {
           </div>
           <section className="surface-card">
             <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="eyebrow">Chronological holdout</p><h3 className="mt-2 text-lg font-semibold">Observed and modelled values</h3><div className="mt-2"><ChartZoomControls isZoomed={zoom.isZoomed} onReset={zoom.resetZoom} /></div></div><span className="text-xs text-ink/40">{frequency} · {model.replace(/_/g, " ")}</span></div>
-            {chartData.length ? <div className="h-[360px] w-full" onWheel={zoom.handleWheel}>
+            {chartData.length ? <div className="h-[360px] w-full" ref={zoom.containerRef} style={{ overscrollBehavior: "contain" }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 4, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
