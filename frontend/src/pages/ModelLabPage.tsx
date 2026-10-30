@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { ApiError, getModels, type ModelComparisonResponse } from "../api/client";
+import { ApiError, getModels, type ModelComparisonResponse, type ModelMetrics } from "../api/client";
 import { ErrorState, LoadingState } from "./OverviewPage";
 
 type Frequency = "hourly" | "daily";
@@ -23,6 +23,10 @@ const METRIC_LABELS: Record<Metric, string> = {
 
 function modelName(value: string): string {
   return MODEL_NAMES[value] ?? value.replace(/_/g, " ");
+}
+
+function getMetricValue(metrics: ModelMetrics | undefined, metric: Metric): number | undefined {
+  return metric === "mape" ? metrics?.mape_percent : metrics?.[metric];
 }
 
 function metricValue(value: number | undefined, metric: Metric): string {
@@ -56,11 +60,11 @@ export default function ModelLabPage() {
 
   const models = result?.models ?? {};
   const rows = useMemo(() => Object.entries(models)
-    .filter(([, model]) => model.status === "success" && typeof model.metrics?.[metric] === "number")
-    .map(([key, model]) => ({ key, name: modelName(key), score: model.metrics?.[metric] as number }))
+    .filter(([, model]) => model.status === "success" && typeof getMetricValue(model.metrics, metric) === "number")
+    .map(([key, model]) => ({ key, name: modelName(key), score: getMetricValue(model.metrics, metric) as number }))
     .sort((a, b) => a.score - b.score), [models, metric]);
   const bestModel = metric === "rmse" ? result?.best_by_rmse : result?.best_by_mae;
-  const bestScore = bestModel ? models[bestModel]?.metrics?.[metric] : undefined;
+  const bestScore = bestModel ? getMetricValue(models[bestModel]?.metrics, metric) : undefined;
 
   return (
     <div className="space-y-5">
@@ -124,7 +128,7 @@ export default function ModelLabPage() {
                 <td className="py-3 pr-3 font-medium">{modelName(key)}</td>
                 <td className="py-3 text-right font-mono text-xs">{metricValue(model.metrics?.mae, "mae")}</td>
                 <td className="py-3 text-right font-mono text-xs">{metricValue(model.metrics?.rmse, "rmse")}</td>
-                <td className="py-3 text-right font-mono text-xs">{metricValue(model.metrics?.mape, "mape")}</td>
+                <td className="py-3 text-right font-mono text-xs">{metricValue(getMetricValue(model.metrics, "mape"), "mape")}</td>
                 <td className="py-3 text-right font-mono text-xs">{model.evaluated_timestamps?.toLocaleString() ?? "N/A"}</td>
               </tr>)}</tbody>
             </table></div>
