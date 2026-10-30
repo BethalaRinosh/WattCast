@@ -35,7 +35,7 @@ export interface DescriptiveStats {
 export interface ModelMetrics {
   mae?: number;
   rmse?: number;
-  mape?: number;
+  mape_percent?: number;
 }
 
 
