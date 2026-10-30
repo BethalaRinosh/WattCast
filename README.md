@@ -4,7 +4,7 @@
 
 WattCast is an academic micro project for the Data Science 3rd Internal Assessment. It analyses historical electricity consumption and compares time-series and machine-learning forecasting methods through a web dashboard.
 
-> **Project status:** Steps 1–14 are locally verified. Step 13 correlation analysis passed its focused tests (4/4), API tests (10/10) and full backend suite (71/71); the real UCI pipeline produced hourly and daily reports across all seven numeric measurements. The frontend correlation page was also confirmed working in the browser. Step 14 model-comparison and forecast dashboard pages are locally verified. Step 15 decomposition integration and dashboard polish are implemented; local verification is pending. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
+> **Project status:** Steps 1–14 are locally verified. Step 13 correlation analysis passed its focused tests (4/4), API tests (10/10) and full backend suite (71/71); the real UCI pipeline produced hourly and daily reports across all seven numeric measurements. The frontend correlation page was also confirmed working in the browser. Step 14 model-comparison and forecast dashboard pages are locally verified. Step 15 decomposition integration and dashboard polish are locally verified. A follow-up native dropdown contrast fix for dark mode is committed; its local build check is pending. One non-blocking Starlette deprecation warning remains for the current `httpx` test-client integration.
 
 ## Problem statement
 Electricity consumption changes over time due to recurring daily and weekly routines, longer-term trends, and random variation. WattCast aims to explore these patterns and compare forecasting approaches using a chronological test set.
@@ -841,3 +841,10 @@ Browser checklist:
 6. Stop the backend temporarily and confirm the API-offline/error state is understandable; restart it afterward.
 
 **Verification status:** Step 15 implementation committed. Awaiting local production-build and browser verification.
+
+
+### Step 15 follow-up: native dropdown contrast
+
+Native HTML select menus now explicitly use the active light/dark color scheme, with readable option foreground and background colors in both themes. This addresses browser-native option lists that otherwise retained a light menu with low-contrast text in dark mode.
+
+After pulling, run `npm run build` from `frontend/` and inspect dropdowns in Data explorer, Correlation analysis, Model lab and Forecasts while dark mode is enabled.
