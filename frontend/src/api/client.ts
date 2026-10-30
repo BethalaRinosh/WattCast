@@ -195,6 +195,27 @@ export function getCorrelation(
   return apiGet<CorrelationResponse>(`/api/correlation/${series}`, signal);
 }
 
+export interface DecompositionPoint {
+  timestamp: string;
+  observed: number | null;
+  trend: number | null;
+  seasonal: number | null;
+  residual: number | null;
+}
+
+export interface DecompositionResponse {
+  series: "hourly" | "daily";
+  count: number;
+  points: DecompositionPoint[];
+}
+
+export function getDecomposition(
+  series: "hourly" | "daily",
+  signal?: AbortSignal,
+): Promise<DecompositionResponse> {
+  return apiGet<DecompositionResponse>(`/api/decomposition/${series}`, signal);
+}
+
 export function getModels(
   series: "hourly" | "daily",
   signal?: AbortSignal,
