@@ -43,3 +43,6 @@ frontend/.vite/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Generated statistical model reports
+backend/reports/statistical_models/
