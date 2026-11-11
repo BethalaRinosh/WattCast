@@ -358,3 +358,18 @@ def test_forecast_returns_404_when_no_valid_prediction_rows_exist(tmp_path, monk
     response = client.get("/api/forecast/hourly?model=holt_winters")
     assert response.status_code == 404
     assert response.json()["detail"]["code"] == "forecast_not_found"
+
+
+
+def test_models_returns_requested_frequency_metrics(tmp_path, monkeypatch):
+    reports = tmp_path / "reports"
+    folder = reports / "evaluation"
+    folder.mkdir(parents=True)
+    (folder / "evaluation_results.json").write_text(json.dumps({
+        "series": {"daily": {"best_by_mae": "seasonal_naive", "evaluation_observations": 12}}
+    }), encoding="utf-8")
+    monkeypatch.setattr(api, "REPORTS_DIR", reports)
+    response = client.get("/api/models/daily")
+    assert response.status_code == 200
+    assert response.json()["best_by_mae"] == "seasonal_naive"
+    assert response.json()["evaluation_observations"] == 12
