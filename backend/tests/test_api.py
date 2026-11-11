@@ -190,3 +190,16 @@ def test_summary_rejects_malformed_json_report(tmp_path, monkeypatch):
     response = client.get("/api/summary")
     assert response.status_code == 500
     assert response.json()["detail"]["code"] == "artifact_unreadable"
+
+
+
+def test_eda_returns_available_profile_rows(tmp_path, monkeypatch):
+    reports = tmp_path / "reports"
+    eda_dir = reports / "eda"
+    eda_dir.mkdir(parents=True)
+    (eda_dir / "eda_summary.json").write_text(json.dumps({"source_type": "real"}), encoding="utf-8")
+    pd.DataFrame({"hour": [0, 1], "mean_kw": [0.8, 1.2]}).to_csv(eda_dir / "intraday_profile.csv", index=False)
+    monkeypatch.setattr(api, "REPORTS_DIR", reports)
+    response = client.get("/api/eda")
+    assert response.status_code == 200
+    assert response.json()["profiles"]["intraday_profile"][1]["mean_kw"] == 1.2
