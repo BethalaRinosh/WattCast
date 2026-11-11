@@ -166,3 +166,15 @@ def test_summary_returns_404_when_eda_report_is_missing(tmp_path, monkeypatch):
     response = client.get("/api/summary")
     assert response.status_code == 404
     assert response.json()["detail"]["code"] == "artifact_not_found"
+
+
+
+def test_summary_returns_404_when_evaluation_report_is_missing(tmp_path, monkeypatch):
+    reports = tmp_path / "reports"
+    eda_dir = reports / "eda"
+    eda_dir.mkdir(parents=True)
+    (eda_dir / "eda_summary.json").write_text(json.dumps({"source_type": "real"}), encoding="utf-8")
+    monkeypatch.setattr(api, "REPORTS_DIR", reports)
+    response = client.get("/api/summary")
+    assert response.status_code == 404
+    assert "evaluation_results.json" in response.json()["detail"]["message"]
