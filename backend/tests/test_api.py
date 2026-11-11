@@ -413,3 +413,11 @@ def test_forecast_returns_404_when_no_valid_prediction_rows_exist(tmp_path, monk
     response = client.get("/api/forecast/hourly?model=holt_winters")
     assert response.status_code == 404
     assert response.json()["detail"]["code"] == "forecast_not_found"
+
+
+
+def test_correlation_returns_actionable_404_when_report_is_missing(tmp_path, monkeypatch):
+    monkeypatch.setattr(api, "REPORTS_DIR", tmp_path)
+    response = client.get("/api/correlation/hourly")
+    assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "artifact_not_found"
