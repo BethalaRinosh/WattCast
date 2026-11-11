@@ -301,8 +301,8 @@ def test_decomposition_serializes_missing_components_as_null(tmp_path, monkeypat
     monkeypatch.setattr(api, "REPORTS_DIR", reports)
     response = client.get("/api/decomposition/daily")
     assert response.status_code == 200
-    assert response.json()["points"][0]["trend"] is null
-    assert response.json()["points"][0]["residual"] is null
+    assert response.json()["points"][0]["trend"] is None
+    assert response.json()["points"][0]["residual"] is None
 
 
 
