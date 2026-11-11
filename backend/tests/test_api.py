@@ -318,3 +318,15 @@ def test_models_returns_requested_frequency_metrics(tmp_path, monkeypatch):
     assert response.status_code == 200
     assert response.json()["best_by_mae"] == "seasonal_naive"
     assert response.json()["evaluation_observations"] == 12
+
+
+
+def test_models_returns_404_when_frequency_has_no_evaluation(tmp_path, monkeypatch):
+    reports = tmp_path / "reports"
+    folder = reports / "evaluation"
+    folder.mkdir(parents=True)
+    (folder / "evaluation_results.json").write_text(json.dumps({"series": {"hourly": {}}}), encoding="utf-8")
+    monkeypatch.setattr(api, "REPORTS_DIR", reports)
+    response = client.get("/api/models/daily")
+    assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "series_evaluation_not_found"
