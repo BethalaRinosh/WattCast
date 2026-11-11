@@ -336,3 +336,9 @@ def test_models_returns_404_when_frequency_has_no_evaluation(tmp_path, monkeypat
 def test_forecast_rejects_unsupported_frequency():
     response = client.get("/api/forecast/weekly")
     assert response.status_code == 422
+
+
+
+def test_forecast_rejects_limit_above_api_maximum():
+    response = client.get("/api/forecast/hourly?limit=2001")
+    assert response.status_code == 422
