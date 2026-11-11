@@ -215,3 +215,9 @@ def test_eda_allows_optional_profiles_to_be_absent(tmp_path, monkeypatch):
     response = client.get("/api/eda")
     assert response.status_code == 200
     assert response.json()["profiles"] == {}
+
+
+
+def test_series_rejects_unsupported_frequency():
+    response = client.get("/api/series/weekly")
+    assert response.status_code == 422
