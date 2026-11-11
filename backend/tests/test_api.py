@@ -385,3 +385,9 @@ def test_models_returns_404_when_frequency_has_no_evaluation(tmp_path, monkeypat
     response = client.get("/api/models/daily")
     assert response.status_code == 404
     assert response.json()["detail"]["code"] == "series_evaluation_not_found"
+
+
+
+def test_forecast_rejects_unsupported_frequency():
+    response = client.get("/api/forecast/weekly")
+    assert response.status_code == 422
