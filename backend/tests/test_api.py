@@ -255,3 +255,14 @@ def test_series_returns_empty_points_for_empty_valid_csv(tmp_path, monkeypatch):
     assert response.status_code == 200
     assert response.json()["count"] == 0
     assert response.json()["points"] == []
+
+
+
+def test_series_reports_missing_required_columns(tmp_path, monkeypatch):
+    processed = tmp_path / "processed"
+    processed.mkdir()
+    pd.DataFrame({"timestamp": ["2024-01-01"], "power": [1.0]}).to_csv(processed / "hourly_energy.csv", index=False)
+    monkeypatch.setattr(api, "PROCESSED_DIR", processed)
+    response = client.get("/api/series/hourly")
+    assert response.status_code == 500
+    assert response.json()["detail"]["code"] == "invalid_artifact_schema"
