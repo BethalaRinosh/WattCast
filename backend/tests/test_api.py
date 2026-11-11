@@ -266,3 +266,9 @@ def test_series_reports_missing_required_columns(tmp_path, monkeypatch):
     response = client.get("/api/series/hourly")
     assert response.status_code == 500
     assert response.json()["detail"]["code"] == "invalid_artifact_schema"
+
+
+
+def test_decomposition_rejects_unsupported_frequency():
+    response = client.get("/api/decomposition/weekly")
+    assert response.status_code == 422
