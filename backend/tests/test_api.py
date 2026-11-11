@@ -178,3 +178,15 @@ def test_summary_returns_404_when_evaluation_report_is_missing(tmp_path, monkeyp
     response = client.get("/api/summary")
     assert response.status_code == 404
     assert "evaluation_results.json" in response.json()["detail"]["message"]
+
+
+
+def test_summary_rejects_malformed_json_report(tmp_path, monkeypatch):
+    reports = tmp_path / "reports"
+    eda_dir = reports / "eda"
+    eda_dir.mkdir(parents=True)
+    (eda_dir / "eda_summary.json").write_text("{not-json", encoding="utf-8")
+    monkeypatch.setattr(api, "REPORTS_DIR", reports)
+    response = client.get("/api/summary")
+    assert response.status_code == 500
+    assert response.json()["detail"]["code"] == "artifact_unreadable"
