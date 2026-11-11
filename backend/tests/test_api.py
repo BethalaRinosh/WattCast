@@ -243,3 +243,15 @@ def test_series_drops_invalid_timestamps_and_non_finite_values(tmp_path, monkeyp
     assert response.status_code == 200
     assert response.json()["count"] == 1
     assert response.json()["points"][0]["active_power_kw"] == 1.0
+
+
+
+def test_series_returns_empty_points_for_empty_valid_csv(tmp_path, monkeypatch):
+    processed = tmp_path / "processed"
+    processed.mkdir()
+    pd.DataFrame(columns=["timestamp", "active_power_kw"]).to_csv(processed / "daily_energy.csv", index=False)
+    monkeypatch.setattr(api, "PROCESSED_DIR", processed)
+    response = client.get("/api/series/daily")
+    assert response.status_code == 200
+    assert response.json()["count"] == 0
+    assert response.json()["points"] == []
