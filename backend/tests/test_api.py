@@ -203,3 +203,15 @@ def test_eda_returns_available_profile_rows(tmp_path, monkeypatch):
     response = client.get("/api/eda")
     assert response.status_code == 200
     assert response.json()["profiles"]["intraday_profile"][1]["mean_kw"] == 1.2
+
+
+
+def test_eda_allows_optional_profiles_to_be_absent(tmp_path, monkeypatch):
+    reports = tmp_path / "reports"
+    eda_dir = reports / "eda"
+    eda_dir.mkdir(parents=True)
+    (eda_dir / "eda_summary.json").write_text(json.dumps({"source_type": "synthetic"}), encoding="utf-8")
+    monkeypatch.setattr(api, "REPORTS_DIR", reports)
+    response = client.get("/api/eda")
+    assert response.status_code == 200
+    assert response.json()["profiles"] == {}
