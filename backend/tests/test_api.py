@@ -284,3 +284,22 @@ def test_decomposition_reports_missing_component_columns(tmp_path, monkeypatch):
     response = client.get("/api/decomposition/daily")
     assert response.status_code == 500
     assert response.json()["detail"]["code"] == "invalid_artifact_schema"
+
+
+
+def test_decomposition_serializes_missing_components_as_null(tmp_path, monkeypatch):
+    reports = tmp_path / "reports"
+    folder = reports / "time_series"
+    folder.mkdir(parents=True)
+    pd.DataFrame({
+        "timestamp": ["2024-01-01"],
+        "observed": [1.0],
+        "trend": [None],
+        "seasonal": [0.2],
+        "residual": [None],
+    }).to_csv(folder / "daily_decomposition.csv", index=False)
+    monkeypatch.setattr(api, "REPORTS_DIR", reports)
+    response = client.get("/api/decomposition/daily")
+    assert response.status_code == 200
+    assert response.json()["points"][0]["trend"] is null
+    assert response.json()["points"][0]["residual"] is null
