@@ -272,3 +272,15 @@ def test_series_reports_missing_required_columns(tmp_path, monkeypatch):
 def test_decomposition_rejects_unsupported_frequency():
     response = client.get("/api/decomposition/weekly")
     assert response.status_code == 422
+
+
+
+def test_decomposition_reports_missing_component_columns(tmp_path, monkeypatch):
+    reports = tmp_path / "reports"
+    folder = reports / "time_series"
+    folder.mkdir(parents=True)
+    pd.DataFrame({"timestamp": ["2024-01-01"], "observed": [1.0]}).to_csv(folder / "daily_decomposition.csv", index=False)
+    monkeypatch.setattr(api, "REPORTS_DIR", reports)
+    response = client.get("/api/decomposition/daily")
+    assert response.status_code == 500
+    assert response.json()["detail"]["code"] == "invalid_artifact_schema"
