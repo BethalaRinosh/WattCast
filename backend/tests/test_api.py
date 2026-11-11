@@ -228,3 +228,18 @@ def test_series_rejects_limit_above_api_maximum(tmp_path, monkeypatch):
     monkeypatch.setattr(api, "PROCESSED_DIR", tmp_path)
     response = client.get("/api/series/hourly?limit=2001")
     assert response.status_code == 422
+
+
+
+def test_series_drops_invalid_timestamps_and_non_finite_values(tmp_path, monkeypatch):
+    processed = tmp_path / "processed"
+    processed.mkdir()
+    pd.DataFrame({
+        "timestamp": ["2024-01-01 00:00:00", "not-a-date", "2024-01-01 02:00:00"],
+        "active_power_kw": [1.0, 2.0, float("inf")],
+    }).to_csv(processed / "hourly_energy.csv", index=False)
+    monkeypatch.setattr(api, "PROCESSED_DIR", processed)
+    response = client.get("/api/series/hourly")
+    assert response.status_code == 200
+    assert response.json()["count"] == 1
+    assert response.json()["points"][0]["active_power_kw"] == 1.0
