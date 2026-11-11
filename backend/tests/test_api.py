@@ -397,3 +397,19 @@ def test_forecast_rejects_unsupported_frequency():
 def test_forecast_rejects_limit_above_api_maximum():
     response = client.get("/api/forecast/hourly?limit=2001")
     assert response.status_code == 422
+
+
+
+def test_forecast_returns_404_when_no_valid_prediction_rows_exist(tmp_path, monkeypatch):
+    reports = tmp_path / "reports"
+    folder = reports / "statistical_models"
+    folder.mkdir(parents=True)
+    pd.DataFrame({
+        "timestamp": ["not-a-date"],
+        "actual_kw": [1.0],
+        "holt_winters_forecast_kw": [1.1],
+    }).to_csv(folder / "hourly_statistical_forecasts.csv", index=False)
+    monkeypatch.setattr(api, "REPORTS_DIR", reports)
+    response = client.get("/api/forecast/hourly?model=holt_winters")
+    assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "forecast_not_found"
