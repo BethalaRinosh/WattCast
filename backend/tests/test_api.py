@@ -158,3 +158,11 @@ def test_health_includes_api_version():
     response = client.get("/api/health")
     assert response.status_code == 200
     assert response.json()["version"] == "1.0.0"
+
+
+
+def test_summary_returns_404_when_eda_report_is_missing(tmp_path, monkeypatch):
+    monkeypatch.setattr(api, "REPORTS_DIR", tmp_path)
+    response = client.get("/api/summary")
+    assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "artifact_not_found"
