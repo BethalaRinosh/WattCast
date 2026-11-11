@@ -151,3 +151,10 @@ def test_correlation_rejects_invalid_frequency():
     response = client.get("/api/correlation/weekly")
     assert response.status_code == 422
     assert response.json()["detail"]["code"] == "invalid_series"
+
+
+
+def test_health_includes_api_version():
+    response = client.get("/api/health")
+    assert response.status_code == 200
+    assert response.json()["version"] == "1.0.0"
