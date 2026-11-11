@@ -221,3 +221,10 @@ def test_eda_allows_optional_profiles_to_be_absent(tmp_path, monkeypatch):
 def test_series_rejects_unsupported_frequency():
     response = client.get("/api/series/weekly")
     assert response.status_code == 422
+
+
+
+def test_series_rejects_limit_above_api_maximum(tmp_path, monkeypatch):
+    monkeypatch.setattr(api, "PROCESSED_DIR", tmp_path)
+    response = client.get("/api/series/hourly?limit=2001")
+    assert response.status_code == 422
